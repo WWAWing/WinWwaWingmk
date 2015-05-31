@@ -162,7 +162,7 @@ int g_iLoadCGHeight = 800;
 CDib	*g_pDib;
 HINSTANCE	g_hInst;
 HWND 	g_hWnd;
-HWND 	g_hWndHide;
+//HWND 	g_hWndHide;
 HWND	g_hDlgObject = NULL;
 HWND	g_hDlgMap = NULL;
 HWND	g_hDlgSelectChara = NULL;
@@ -206,8 +206,9 @@ BOOL g_iColorTp;
 char g_MapData[FILE_DATA_MAX];
 char PressData[FILE_DATA_MAX];
 
+char g_szSettingFile[250] = "./WinWwamk.ini";	//設定ファイル名
 char g_szSelectFile[250] = "wwamap.dat";		//ファイル名
-char g_szTitleName[] = "ＷＷＡマップ作成ツール Ver3.10";
+char g_szTitleName[] = "ＷＷＡマップ作成ツール Ver3.13";
 char g_szSelectDir[250];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
@@ -1018,7 +1019,8 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	WNDCLASS	wc;
 	g_hInst = hInst;
 	OSVERSIONINFO OsVersion;
-	int SizeX, SizeY;
+	RECT WindowRect, ClientRect;
+	int SizeX, SizeY, PositionX, PositionY;
 
 	if ( !hInstPrev ){
 		wc.style		 = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -1035,22 +1037,34 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 			return FALSE;
 	}
 
-	SizeX = 463;
-	SizeY = 483 +GetSystemMetrics(SM_CYMENU) +GetSystemMetrics(SM_CYCAPTION);
+	//設定ファイル読み込み
+	PositionX = GetPrivateProfileInt("Main", "PositionX", CW_USEDEFAULT, g_szSettingFile);
+	PositionY = GetPrivateProfileInt("Main", "PositionY", 0, g_szSettingFile);
+	//g_szSelectDir = GetPrivateProfileString("Main", "SelectDir", "mapdata", buf, 250, g_szSettingFile);
+	//g_szSelectFile = GetPrivateProfileString("Main", "SelectFile", "wwamap.dat", buf, 250, g_szSettingFile);
 
 	//メインウィンドウ作成
 	g_hWnd = CreateWindow( "WWAMK","ＷＷＡマップ作成ツール",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_HSCROLL | WS_VSCROLL,
-		0,0,
-		SizeX, SizeY,
-		NULL,NULL,hInst,NULL );
+		PositionX, PositionY,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		NULL, NULL, hInst, NULL);
 
-	//ダイアログ用ダミーウィンドウ作成
-	g_hWndHide = CreateWindow( "WWAMK","DammyWindow",
-		WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL,
-		260,0,
-		CW_USEDEFAULT,CW_USEDEFAULT,
-		NULL,NULL,hInst,NULL );
+	//サイズ変更
+	GetWindowRect(g_hWnd, &WindowRect);
+	GetClientRect(g_hWnd, &ClientRect);
+	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + 440;
+	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + 460;
+	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+
+	/*
+	//サイズ調整用ダミーウィンドウ作成
+	g_hWndHide = CreateWindow("WWAMK", "DummyWindow",
+	WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL,
+	CW_USEDEFAULT, CW_USEDEFAULT,
+	CW_USEDEFAULT, CW_USEDEFAULT,
+	NULL, NULL, hInst, NULL);
+	*/
 
 	if ( g_hWnd != NULL ){
 		ShowWindow( g_hWnd,CmdShow );
@@ -1060,7 +1074,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	//WindowsXPかを判定
 	OsVersion.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
 	GetVersionEx( &OsVersion );
-	if( ((OsVersion.dwPlatformId >= 2) && (OsVersion.dwBuildNumber >= 2500)) || (OsVersion.dwPlatformId >= 3) ) g_bWinXP = TRUE;
+	if (((OsVersion.dwPlatformId >= 2) && (OsVersion.dwBuildNumber >= 2500)) || (OsVersion.dwPlatformId >= 3)) g_bWinXP = TRUE;
 
 	//初期ファイル名設定
 	unsigned int i, j;
@@ -1094,8 +1108,8 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	LoadBitmap();
 
 	//ダイアログ表示
-	g_hDlgSelectObject = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWndHide, (DLGPROC)SelectObjectDialogProc );
-	g_hDlgSelectMap = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWndHide, (DLGPROC)SelectMapDialogProc );
+	g_hDlgSelectObject = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc );
+	g_hDlgSelectMap = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc );
 	//ダイアログ移動
 	RECT rect;
 	RECT rectBox;
@@ -1110,10 +1124,10 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	ShowWindow( g_hDlgSelectObject, SW_SHOW );
 
 	//クイックビュー
-	g_hDlgQuickView = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWndHide, (DLGPROC)QuickViewDialogProc );
+	g_hDlgQuickView = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc );
 	GetWindowRect( g_hWnd, &rectBox );
 	GetWindowRect( g_hDlgQuickView, &rect );
-	MoveWindow( g_hDlgQuickView, 0, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+	MoveWindow( g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgQuickView, SW_SHOW );
 
 	//画面色数取得
@@ -2022,8 +2036,7 @@ void PaintWindowSelectObject( HWND hWnd )
 	}
 
 	//文字表示
-	if( g_bWinXP == TRUE ) SetBkColor( hDC, RGB(236,233,216) );
-	else SetBkColor( hDC, RGB(192,192,192) );
+	SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
 	sprintf( str, "ﾊﾟｰﾂ番号: %d　　", g_SelectObjectData );
 	TextOut( hDC, 3, 124, str, strlen(str) );
 	sprintf( str, "左上: %d　　", g_ScrObject *10 );
@@ -2069,8 +2082,7 @@ void PaintWindowSelectMap( HWND hWnd )
 		}
 	}
 	//文字表示
-	if( g_bWinXP == TRUE ) SetBkColor( hDC, RGB(236,233,216) );
-	else SetBkColor( hDC, RGB(192,192,192) );
+	SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
 	sprintf( str, "ﾊﾟｰﾂ番号: %d　　", g_SelectMapData );
 	TextOut( hDC, 3, 124, str, strlen(str) );
 	sprintf( str, "左上: %d　　", g_ScrMap *10 );
@@ -2507,8 +2519,7 @@ LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 			SetDlgItemText( g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]] );
 			//文字表示
 			char str[50];
-			if( g_bWinXP == TRUE ) SetBkColor( hDC, RGB(236,233,216) );
-			else SetBkColor( hDC, RGB(192,192,192) );
+			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
 			sprintf( str, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData );
 			TextOut( hDC,50,5,str,strlen(str) );
 			type = mapAttribute[g_SelectMapData][ATR_TYPE];
@@ -2519,8 +2530,7 @@ LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 			SetDlgItemText( g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]] );
 			//文字表示
 			char str[50];
-			if( g_bWinXP == TRUE ) SetBkColor( hDC, RGB(236,233,216) );
-			else SetBkColor( hDC, RGB(192,192,192) );
+			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
 			sprintf( str, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData );
 			TextOut( hDC,50,5,str,strlen(str) );
 			type = objectAttribute[g_SelectObjectData][ATR_TYPE];
@@ -2729,7 +2739,7 @@ void DisplayObjectDialog()
 	if( id == 20 ) return;
 
 	//ダイアログの作成
-	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWndHide, (DLGPROC)EditObjectDialogProc );
+	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditObjectDialogProc );
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgObject, IDC_COMBO_OBJECT );
 	for( i = 0 ; i < 13 ; ++i ) SendMessage( hwndCombo, CB_ADDSTRING, 0, (LPARAM)OBJ[i].Name );
@@ -2896,7 +2906,7 @@ void DisplayMapDialog()
 	if( id == 20 ) return;
 
 	//ダイアログの作成
-	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWndHide, (DLGPROC)EditMapDialogProc );
+	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditMapDialogProc );
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgMap, IDC_COMBO_MAP );
 	for( i = 0 ; i < 4 ; ++i ) SendMessage( hwndCombo, CB_ADDSTRING, 0, (LPARAM)MAP[i].Name );
@@ -3787,13 +3797,15 @@ void EditMapFoundation()
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_WORLDNAME, g_worldName );
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_PASSWORD, g_worldPassword );
 	//コンボボックスにデータ挿入
-	DlgDirListComboBox( g_hDlgFoundation, "*.bmp", IDC_COMBO_BMP, IDC_STATIC_FILE, 0 );
+	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp );
+	//DlgDirListComboBox( g_hDlgFoundation, "*.bmp", IDC_COMBO_BMP, IDC_STATIC_FILE, 0 );
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp );
 	if( g_bLoadGif == TRUE ){
 		ShowWindow( GetDlgItem(g_hDlgFoundation,IDC_COMBO_BMP), FALSE );
 		ShowWindow( GetDlgItem(g_hDlgFoundation,IDC_STATIC_BMP), FALSE );
 	}
-	DlgDirListComboBox( g_hDlgFoundation, "*.gif", IDC_COMBO_GIF, IDC_STATIC_FILE, 0 );
+	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName );
+	//DlgDirListComboBox( g_hDlgFoundation, "*.gif", IDC_COMBO_GIF, IDC_STATIC_FILE, 0 );
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName );
 	//各種サイズデータ挿入
 	sprintf( str, "%d×%d", g_iMapSize, g_iMapSize );
@@ -3869,24 +3881,28 @@ BOOL ExecBrowser()
 	char StrHtml[1000];
 
 	//HTML文作成
-	strcpy( StrHtml, "<HTML>\r\n<HEAD><TITLE>World Wide Adventure</TITLE></HEAD>\r\n<BODY BGCOLOR=#A0A0A0>\r\n<CENTER>\r\n\r\n" );
-	strcat( StrHtml, "<APPLET CODE=\"WWA.class\" WIDTH=560 HEIGHT=440>\r\n" );
-	sprintf( StrHtml, "%s<PARAM NAME=paramMapName VALUE=\"%s\">\r\n", StrHtml, g_szSelectFile );
-	strcat( StrHtml, "このブラウザには、Java実行環境がインストールされていません。<BR>\r\n詳細は<A HREF=\"http://www.wwajp.com/wwafaq.html\">ＷＷＡのよくある質問</A>をどうぞ。\r\n</APPLET><BR>Internet RPG \"<A HREF=\"http://www.wwajp.com/\">World Wide Adventure</A>\" (C)1996-2009 NAO\r\n\r\n</CENTER>\r\n</BODY>\r\n</HTML>\r\n" );
+	strcpy(StrHtml, "<!DOCTYPE HTML>\r\n<meta charset=\"UTF-8\">\r\n<link rel=\"stylesheet\" href=\"wwa.css\">\r\n<link rel=\"stylesheet\" href=\"style.css\">\r\n<script src=\"./audio/audio.min.js\"></script>\r\n<script src=\"wwa.js\"></script>\r\n<title>WWA Wing</title>\r\n");
+	strcat(StrHtml, "<div id=\"wrapper\">\r\n\t<div id=\"wwa-wrapper\" class=\"wwa-size-box\" data-wwa-mapdata=\"");
+	strcat(StrHtml, g_szSelectFile);
+	strcat(StrHtml, "\" data-wwa-loader=\"wwaload.js\" data-wwa-urlgate-enable=\"true\" data-wwa-title-img=\"cover.gif\">\r\n\t</div>\r\n</div>\r\n");
+	strcat(StrHtml, "<footer id=\"copyright\">\r\n\t<p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2009 NAO</p>\r\n\t<p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2015 Project Wing/Matsuyuki(rmn.)</p>\r\n</footer>");
 
 	//データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
-	hFile = CreateFile( "user.html", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile == INVALID_HANDLE_VALUE ){
-		MessageBox( g_hWnd, "「user.html」ファイルが作成または書き込みできません。", "注意", MB_OK );
+	hFile = CreateFile("user.html", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE){
+		MessageBox(g_hWnd, "「user.html」ファイルが作成または書き込みできません。", "注意", MB_OK);
 	}
-	WriteFile( hFile, StrHtml, strlen(StrHtml), &dwWritten, NULL );
-	CloseHandle( hFile );
+	WriteFile(hFile, StrHtml, strlen(StrHtml), &dwWritten, NULL);
+	CloseHandle(hFile);
 
-	if( (int)ShellExecute(NULL,"open","user.html",NULL,NULL,SW_SHOWNORMAL) <= 32 ){
-		MessageBox( g_hWnd, "ブラウザ起動エラー\nインターネットエクスプローラかネットスケープが\nインストールされているか確認してください。", "起動失敗", MB_OK );
-		return FALSE;
+	//ブラウザの起動
+	if (MessageBox(g_hWnd, "HTMLファイル「user.html」を出力しました。\nHTMLファイルをブラウザで見ますか？\n(WWADebuggerが必要になる場合があります)", "作成完了", MB_YESNO) == IDYES){
+		if ((int)ShellExecute(NULL, "open", "user.html", NULL, NULL, SW_SHOWNORMAL) <= 32){
+			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
+			return FALSE;
+		}
 	}
 	return TRUE;
 }
@@ -4027,3 +4043,12 @@ BOOL ReadGifImage()
 	return TRUE;
 }
 
+/*
+参考：
+http://www31.ocn.ne.jp/~yoshio2/vcmemo8-1.html
+http://www.c-tipsref.com/
+https://msdn.microsoft.com/ja-jp/library/cc429812.aspx
+https://msdn.microsoft.com/ja-jp/library/cc429800.aspx
+https://msdn.microsoft.com/ja-jp/library/cc429779.aspx
+http://d.hatena.ne.jp/yus_iri/20110911/1315730376
+*/
