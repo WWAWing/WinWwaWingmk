@@ -27,7 +27,8 @@ http://www.wwajp.com/making.html
 # 設定ファイルの記述について
 設定ファイル(WinWwamk.ini)は、以下の設定を変更することができます。
 - メイン(Main)
--- ウインドウの表示位置(PositionX, PositionY)
+   - ウインドウの表示位置(PositionX, PositionY)
+
 実行ファイルと同じ位置にWinWwamk.iniを配置すると、変更が反映されます。
 
 # ライセンス
