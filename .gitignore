@@ -50,6 +50,7 @@ build/
 ipch/
 *.aps
 *.ncb
+*.opendb
 *.opensdf
 *.sdf
 *.cachefile
@@ -154,4 +155,3 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
-/.vs/WinWwamk/v16/Browse.VC.opendb
