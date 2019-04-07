@@ -4,6 +4,7 @@
 #include <olectl.h>
 #include "resource.h"
 #include "cdib.hpp"
+#include <string>
 
 //##------------------------------------------------------------------
 // Visual Style 対応
@@ -402,6 +403,7 @@ void PaintWindow();
 void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
+
 // 選択ダイアログプロシージャ
 LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
@@ -414,10 +416,12 @@ LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 基本メッセージダイアログプロシージャ
 LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+
 // 線と四角の描画
 void DrawLine( HDC hDC, int x, int y, int x2, int y2 );
 void DrawRect( HDC hDC, int x, int y, int x2, int y2 );
 void DrawRect2( HDC hDC, int x, int y, int x2, int y2 );
+
 // 編集ダイアログの表示
 void DisplayObjectDialog();
 void DisplayMapDialog();
@@ -432,28 +436,39 @@ void SetAppearChara( int mapNumber, BOOL flag );
 LRESULT CALLBACK DialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 文字データのセット
 void SetMessageData( int  *point, char *str );
+
 // マップの新規作成
 void MakeNewMap();
 // 基本設定ダイアログ
 void EditMapFoundation();
 // パスワードダイアログプロシージャ
 LRESULT CALLBACK DialogProcPassword( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+
 // 取り消し用、データの一時保存
 void StockAttributeData( int number, int mode );
 // 計算ダイアログの表示
 void CalculateDialog();
 // キャラクタ番号の取得
 int GetCharaNumber( HWND hWnd );
+
 // 拡張出現キャラクタダイアログプロシージャ
 LRESULT CALLBACK DialogProcExtraObject( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK DialogProcExtraMap( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+
+// 文字列を置き換えする
+std::string ReplaceString(std::string TargetText, std::string OldString, std::string NewString);
+// 拡張子を取り除いたファイル名を取得する
+std::string GetHtmlFileName();
 // ブラウザを起動する
 BOOL ExecBrowser();
+
 // 指定キーが押されていた場合はTRUEを返す
 BOOL IsKeyDown( int virtKeyCode );
+
 // Undo機能
 void SetUndoData();
 void RestoreUndoData();
+
 //メモリ取得
 // GIF画像の読み込み
 BOOL ReadGifImage();
@@ -3881,33 +3896,99 @@ int GetCharaNumber( HWND hWnd )
 }
 
 
+//##------------------------------------------------------------------
+// 文字列の置き換え
+
+std::string ReplaceString( std::string TargetText, std::string OldString, std::string NewString )
+{
+	std::string::size_type OldStringPosition = TargetText.find(OldString);
+
+	std::string NewText(TargetText);
+	NewText.replace(OldStringPosition, OldString.length(), NewString);
+
+	return NewText;
+}
+
+
+//##------------------------------------------------------------------
+// 出力するHTMLファイル名を取得
+
+std::string GetHtmlFileName()
+{
+	std::string MapDataFileName(g_szSelectFile);
+	std::string::size_type PeriodPosition = MapDataFileName.find_last_of(".");
+
+	return MapDataFileName.substr(0, PeriodPosition) + ".html";
+}
+
 
 //##------------------------------------------------------------------
 // ファイルの作成とブラウザの起動
 
 BOOL ExecBrowser()
 {
+	// HTML文作成
 	char StrHtml[1000];
+	std::string Html =
+		"<!DOCTYPE HTML>\n"
+		"<html lang=\"ja\">\n"
+		"<head>\n"
+		"  <meta charset=\"UTF-8\">\n"
+		"  <link rel=\"stylesheet\" href=\"wwa.css\">\n"
+		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
+		"  <script src=\"wwa.js\"></script>\n"
+		"  <script src=\"audio/audio.min.js\"></script>\n"
+		"  <title><!--TITLE--></title>\n"
+		"</head>\n"
+		"<body>\n"
+		"<!--WWAWING-->\n"
+		"  <footer id=\"copyright\">\n"
+		"    <p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2017 NAO</p>\n"
+		"    <p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2019 WWA Wing Team</p>\n"
+		"  </footer>\n"
+		"</body>\n"
+		"</html>\n";
 
-	//HTML文作成
-	strcpy(StrHtml, "<!DOCTYPE HTML>\r\n<meta charset=\"UTF-8\">\r\n<link rel=\"stylesheet\" href=\"wwa.css\">\r\n<link rel=\"stylesheet\" href=\"style.css\">\r\n<script src=\"./audio/audio.min.js\"></script>\r\n<script src=\"wwa.js\"></script>\r\n<title>WWA Wing</title>\r\n");
-	strcat(StrHtml, "<div id=\"wrapper\">\r\n\t<div id=\"wwa-wrapper\" class=\"wwa-size-box\" data-wwa-mapdata=\"");
-	strcat(StrHtml, g_szSelectFile);
-	strcat(StrHtml, "\" data-wwa-loader=\"wwaload.js\" data-wwa-urlgate-enable=\"true\" data-wwa-title-img=\"cover.gif\">\r\n\t</div>\r\n</div>\r\n");
-	strcat(StrHtml, "<footer id=\"copyright\">\r\n\t<p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2009 NAO</p>\r\n\t<p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2015 Project Wing/Matsuyuki(rmn.)</p>\r\n</footer>");
+	// WWA Wing部分
+	std::string MapDataFileName(g_szSelectFile);
+	std::string WwaWingHtml =
+		"<div id=\"wrapper\">\n"
+		"  <div\n"
+		"    id=\"wwa-wrapper\"\n"
+		"    class=\"wwa-size-box\"\n"
+		"    data-wwa-mapdata=\"" + MapDataFileName + "\"\n"
+		"    data-wwa-loader=\"wwaload.js\"\n"
+		"    data-wwa-urlgate-enable=\"true\"\n"
+		"    data-wwa-title-img=\"cover.gif\"\n"
+		"  ></div>\n"
+		"</div>";
 
-	//データの書き込み
+	// パーツの置き換え
+	Html = ReplaceString(Html, "<!--TITLE-->", g_worldName);
+	Html = ReplaceString(Html, "<!--WWAWING-->", WwaWingHtml);
+
+	// データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
-	hFile = CreateFile("user.html", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	std::string HtmlFileName;
+	char szStr[30];
+
+	HtmlFileName = GetHtmlFileName();
+	hFile = CreateFile(HtmlFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE){
-		MessageBox(g_hWnd, "「user.html」ファイルが作成または書き込みできません。", "注意", MB_OK);
+		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileName.c_str());
+		MessageBox(g_hWnd, szStr, "注意", MB_OK);
+
+		CloseHandle(hFile);
+		return FALSE;
 	}
-	WriteFile(hFile, StrHtml, strlen(StrHtml), &dwWritten, NULL);
+
+	WriteFile(hFile, Html.c_str(), Html.length(), &dwWritten, NULL);
 	CloseHandle(hFile);
 
-	//ブラウザの起動
-	if (MessageBox(g_hWnd, "HTMLファイル「user.html」を出力しました。\nHTMLファイルをブラウザで見ますか？\n(WWADebuggerが必要になる場合があります)", "作成完了", MB_YESNO) == IDYES){
+	// ブラウザの起動
+	sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)", HtmlFileName.c_str());
+	if (MessageBox(g_hWnd, szStr, "作成完了", MB_YESNO) == IDYES){
 		if ((int)ShellExecute(NULL, "open", "user.html", NULL, NULL, SW_SHOWNORMAL) <= 32){
 			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
 			return FALSE;
