@@ -217,7 +217,7 @@ char PressData[FILE_DATA_MAX];
 
 char g_szSettingFile[250] = "./WinWwamk.ini";	//設定ファイル名
 char g_szSelectFile[250] = "wwamap.dat";		//ファイル名
-char g_szTitleName[] = "ＷＷＡマップ作成ツール Ver3.13";
+char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.2";
 char g_szSelectDir[250];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
@@ -712,6 +712,18 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		InvalidateRect( g_hWnd, NULL, FALSE );
 		break;
 
+	case WM_MOUSEWHEEL:
+		y = GET_WHEEL_DELTA_WPARAM(wParam);
+		if (y < 0) {
+			if (mapYtop < (g_iMapSize - 11)) ++mapYtop;
+			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+		} else if (y > 0) {
+			if (mapYtop > 0) --mapYtop;
+			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+		}
+		InvalidateRect( g_hWnd, NULL, FALSE );
+		break;
+
 	case WM_HSCROLL:
 		if( LOWORD(wParam) == SB_LINEDOWN ){
 			if( mapXtop < (g_iMapSize -11) ) ++mapXtop;
@@ -733,6 +745,19 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
+		break;
+
+	// FIXME: OS側かソフトウェア側で横スクロールが制御されると正常に動作しない
+	case WM_MOUSEHWHEEL:
+		x = GET_WHEEL_DELTA_WPARAM(wParam);
+		if (x > 0) {
+			if ( mapXtop < (g_iMapSize -11) ) ++mapXtop;
+			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
+		} else if (x < 0) {
+			if ( mapXtop > 0 ) --mapXtop;
+			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1);
+		}
+		InvalidateRect(g_hWnd, NULL, FALSE);
 		break;
 
 	case WM_PAINT:
