@@ -4,7 +4,6 @@
 #include <olectl.h>
 #include "resource.h"
 #include "cdib.hpp"
-#include <string>
 
 //##------------------------------------------------------------------
 // Visual Style 対応
@@ -455,10 +454,8 @@ int GetCharaNumber( HWND hWnd );
 LRESULT CALLBACK DialogProcExtraObject( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK DialogProcExtraMap( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 
-// 文字列を置き換えする
-std::string ReplaceString(std::string TargetText, std::string OldString, std::string NewString);
 // 拡張子を取り除いたファイル名を取得する
-std::string GetHtmlFileName();
+char* GetHtmlFileName();
 // ブラウザを起動する
 BOOL ExecBrowser();
 
@@ -3896,110 +3893,68 @@ int GetCharaNumber( HWND hWnd )
 }
 
 
-//##------------------------------------------------------------------
-// 文字列の置き換え
-
-std::string ReplaceString( std::string TargetText, std::string OldString, std::string NewString )
+char* GetHtmlFileName()
 {
-	std::string::size_type OldStringPosition = TargetText.find(OldString);
+	char FileName[50];
+	strcpy(FileName, g_szSelectFile);
+	
+	char* PeriodPosition = strrchr(FileName, '.');
+	PeriodPosition = '\0';
 
-	std::string NewText(TargetText);
-	NewText.replace(OldStringPosition, OldString.length(), NewString);
-
-	return NewText;
+	return strcat(FileName, ".html");
 }
 
-
-//##------------------------------------------------------------------
-// 出力するHTMLファイル名を取得
-
-std::string GetHtmlFileName()
-{
-	std::string MapDataFileName(g_szSelectFile);
-	std::string::size_type PeriodPosition = MapDataFileName.find_last_of(".");
-
-	return MapDataFileName.substr(0, PeriodPosition) + ".html";
-}
-
-
-//##------------------------------------------------------------------
-// ファイルの作成とブラウザの起動
 
 BOOL ExecBrowser()
 {
-	// HTML文作成
 	char StrHtml[1000];
-	std::string Html =
-		"<!DOCTYPE HTML>\n"
-		"<html lang=\"ja\">\n"
-		"<head>\n"
-		"  <meta charset=\"UTF-8\">\n"
-		"  <link rel=\"stylesheet\" href=\"wwa.css\">\n"
-		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
-		"  <script src=\"wwa.js\"></script>\n"
-		"  <script src=\"audio/audio.min.js\"></script>\n"
-		"  <title><!--TITLE--></title>\n"
-		"</head>\n"
-		"<body>\n"
-		"<!--WWAWING-->\n"
-		"  <footer id=\"copyright\">\n"
-		"    <p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2017 NAO</p>\n"
-		"    <p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2019 WWA Wing Team</p>\n"
-		"  </footer>\n"
-		"</body>\n"
-		"</html>\n";
 
-	// WWA Wing部分
-	std::string MapDataFileName(g_szSelectFile);
-	std::string WwaWingHtml =
-		"<div id=\"wrapper\">\n"
-		"  <div\n"
-		"    id=\"wwa-wrapper\"\n"
-		"    class=\"wwa-size-box\"\n"
-		"    data-wwa-mapdata=\"" + MapDataFileName + "\"\n"
-		"    data-wwa-loader=\"wwaload.js\"\n"
-		"    data-wwa-urlgate-enable=\"true\"\n"
-		"    data-wwa-title-img=\"cover.gif\"\n"
-		"  ></div>\n"
-		"</div>";
+	//HTML文作成
+	strcpy(StrHtml, "<!DOCTYPE HTML>\r\n<html lang=\"ja\">\r\n");
+	// head
+	strcat(StrHtml, "  <head>\r\n    <meta charset=\"UTF-8\">\r\n    <link rel=\"stylesheet\" href=\"wwa.css\">\r\n    <link rel=\"stylesheet\" href=\"style.css\">\r\n    <script src=\"./audio/audio.min.js\"></script>\r\n    <script src=\"wwa.js\"></script>\r\n    <title>");
+	strcat(StrHtml, g_worldName);
+	strcat(StrHtml, "</title>\r\n  </head>\r\n");
+	// body
+	strcat(StrHtml, "  <body>\r\n    <div id=\"wrapper\">\r\n      <div id=\"wwa-wrapper\" class=\"wwa-size-box\" data-wwa-mapdata=\"");
+	strcat(StrHtml, g_szSelectFile);
+	strcat(StrHtml, "\" data-wwa-loader=\"wwaload.js\" data-wwa-urlgate-enable=\"true\" data-wwa-title-img=\"cover.gif\">\r\n      </div>\r\n    </div>\r\n");
+	strcat(StrHtml, "    <footer id=\"copyright\">\r\n      <p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2009 NAO</p>\r\n      <p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2019 WWA Wing Team</p>\r\n    </footer>\r\n");
+	strcat(StrHtml, "  </body>\r\n");
+	strcat(StrHtml, "</html>\r\n");
 
-	// パーツの置き換え
-	Html = ReplaceString(Html, "<!--TITLE-->", g_worldName);
-	Html = ReplaceString(Html, "<!--WWAWING-->", WwaWingHtml);
-
-	// ファイル名作成
-	std::string HtmlFileName;
-	const char *HtmlFileNameString;
-	HtmlFileName = GetHtmlFileName();
-	HtmlFileNameString = HtmlFileName.c_str();
-
-	// データの書き込み
+	//データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
-	char szStr[30];
+	char* HtmlFileName;
 
-	hFile = CreateFile(HtmlFileNameString, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE){
-		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileNameString);
+	HtmlFileName = GetHtmlFileName();
+	hFile = CreateFile(HtmlFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		char szStr[50];
+		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileName);
 		MessageBox(g_hWnd, szStr, "注意", MB_OK);
 
 		CloseHandle(hFile);
 		return FALSE;
 	}
-
-	WriteFile(hFile, Html.c_str(), Html.length(), &dwWritten, NULL);
+	WriteFile(hFile, StrHtml, strlen(StrHtml), &dwWritten, NULL);
 	CloseHandle(hFile);
 
-	// ブラウザの起動
-	sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)", HtmlFileNameString);
-	if (MessageBox(g_hWnd, szStr, "作成完了", MB_YESNO) == IDYES){
-		if ((int)ShellExecute(NULL, "open", HtmlFileNameString, NULL, NULL, SW_SHOWNORMAL) <= 32){
-			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
-			return FALSE;
+	//ブラウザの起動
+	{
+		char szStr[50];
+		sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(WWADebuggerが必要になる場合があります)", HtmlFileName);
+		if (MessageBox(g_hWnd, szStr, "作成完了", MB_YESNO) == IDYES) {
+			if ((int)ShellExecute(NULL, "open", HtmlFileName, NULL, NULL, SW_SHOWNORMAL) <= 32) {
+				MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
+				return FALSE;
+			}
 		}
 	}
 	return TRUE;
 }
+
 
 
 
