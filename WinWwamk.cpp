@@ -3967,16 +3967,20 @@ BOOL ExecBrowser()
 	Html = ReplaceString(Html, "<!--TITLE-->", g_worldName);
 	Html = ReplaceString(Html, "<!--WWAWING-->", WwaWingHtml);
 
+	// ファイル名作成
+	std::string HtmlFileName;
+	const char *HtmlFileNameString;
+	HtmlFileName = GetHtmlFileName();
+	HtmlFileNameString = HtmlFileName.c_str();
+
 	// データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
-	std::string HtmlFileName;
 	char szStr[30];
 
-	HtmlFileName = GetHtmlFileName();
-	hFile = CreateFile(HtmlFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	hFile = CreateFile(HtmlFileNameString, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE){
-		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileName.c_str());
+		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileNameString);
 		MessageBox(g_hWnd, szStr, "注意", MB_OK);
 
 		CloseHandle(hFile);
@@ -3987,9 +3991,9 @@ BOOL ExecBrowser()
 	CloseHandle(hFile);
 
 	// ブラウザの起動
-	sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)", HtmlFileName.c_str());
+	sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)", HtmlFileNameString);
 	if (MessageBox(g_hWnd, szStr, "作成完了", MB_YESNO) == IDYES){
-		if ((int)ShellExecute(NULL, "open", "user.html", NULL, NULL, SW_SHOWNORMAL) <= 32){
+		if ((int)ShellExecute(NULL, "open", HtmlFileNameString, NULL, NULL, SW_SHOWNORMAL) <= 32){
 			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
 			return FALSE;
 		}
