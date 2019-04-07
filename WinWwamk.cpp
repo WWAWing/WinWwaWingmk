@@ -5,6 +5,15 @@
 #include "resource.h"
 #include "cdib.hpp"
 
+//##------------------------------------------------------------------
+// Visual Style 対応
+#pragma comment(linker, \
+	"\"/manifestdependency:type='Win32' "\
+	"name='Microsoft.Windows.Common-Controls' "\
+	"version='6.0.0.0' "\
+	"processorArchitecture='*' "\
+	"publicKeyToken='6595b64144ccf1df' "\
+	"language='*'\"")
 
 //##------------------------------------------------------------------
 // 定数定義
@@ -4042,13 +4051,3 @@ BOOL ReadGifImage()
 
 	return TRUE;
 }
-
-/*
-参考：
-http://www31.ocn.ne.jp/~yoshio2/vcmemo8-1.html
-http://www.c-tipsref.com/
-https://msdn.microsoft.com/ja-jp/library/cc429812.aspx
-https://msdn.microsoft.com/ja-jp/library/cc429800.aspx
-https://msdn.microsoft.com/ja-jp/library/cc429779.aspx
-http://d.hatena.ne.jp/yus_iri/20110911/1315730376
-*/
