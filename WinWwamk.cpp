@@ -713,13 +713,24 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 
 	case WM_MOUSEWHEEL:
-		y = GET_WHEEL_DELTA_WPARAM(wParam);
-		if (y < 0) {
-			if (mapYtop < (g_iMapSize - 11)) ++mapYtop;
-			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
-		} else if (y > 0) {
-			if (mapYtop > 0) --mapYtop;
-			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
+			x = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (x < 0) {
+				if (mapXtop < (g_iMapSize - 11)) ++mapXtop;
+				SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
+			} else if (x > 0) {
+				if (mapXtop > 0) --mapXtop;
+				SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
+			}
+		} else {
+			y = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (y < 0) {
+				if (mapYtop < (g_iMapSize - 11)) ++mapYtop;
+				SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+			} else if (y > 0) {
+				if (mapYtop > 0) --mapYtop;
+				SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+			}
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
 		break;
@@ -745,19 +756,6 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
-		break;
-
-	// FIXME: OS側かソフトウェア側で横スクロールが制御されると正常に動作しない
-	case WM_MOUSEHWHEEL:
-		x = GET_WHEEL_DELTA_WPARAM(wParam);
-		if (x > 0) {
-			if ( mapXtop < (g_iMapSize -11) ) ++mapXtop;
-			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
-		} else if (x < 0) {
-			if ( mapXtop > 0 ) --mapXtop;
-			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1);
-		}
-		InvalidateRect(g_hWnd, NULL, FALSE);
 		break;
 
 	case WM_PAINT:
