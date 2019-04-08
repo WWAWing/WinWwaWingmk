@@ -142,6 +142,9 @@
     <Image Include="wwa.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="template.html">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="LICENSE" />
     <None Include="README.md" />
   </ItemGroup>
