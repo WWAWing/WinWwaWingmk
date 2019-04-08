@@ -3928,7 +3928,6 @@ std::string GetHtmlFileName()
 BOOL ExecBrowser()
 {
 	// HTML文作成
-	char StrHtml[1000];
 	std::string Html =
 		"<!DOCTYPE HTML>\n"
 		"<html lang=\"ja\">\n"
@@ -3976,12 +3975,11 @@ BOOL ExecBrowser()
 	// データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
-	char szStr[30];
 
 	hFile = CreateFile(HtmlFileNameString, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE){
-		sprintf(szStr, "「%s」ファイルが作成または書き込みできません。", HtmlFileNameString);
-		MessageBox(g_hWnd, szStr, "注意", MB_OK);
+		std::string ErrorMessage = "「" + HtmlFileName + "」ファイルが作成または書き込みできません。";
+		MessageBox(g_hWnd, ErrorMessage.c_str(), "注意", MB_OK);
 
 		CloseHandle(hFile);
 		return FALSE;
@@ -3991,9 +3989,9 @@ BOOL ExecBrowser()
 	CloseHandle(hFile);
 
 	// ブラウザの起動
-	sprintf(szStr, "「%s」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)", HtmlFileNameString);
-	if (MessageBox(g_hWnd, szStr, "作成完了", MB_YESNO) == IDYES){
-		if ((int)ShellExecute(NULL, "open", HtmlFileNameString, NULL, NULL, SW_SHOWNORMAL) <= 32){
+	std::string Message = "「" + HtmlFileName + "」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)";
+	if (MessageBox(g_hWnd, Message.c_str(), "作成完了", MB_YESNO) == IDYES){
+		if ((int)ShellExecute(g_hWnd, "open", HtmlFileNameString, NULL, NULL, SW_SHOWNORMAL) <= 32){
 			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
 			return FALSE;
 		}
