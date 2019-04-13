@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "cdib.hpp"
 #include <string>
+#include <atlstr.h>
 
 //##------------------------------------------------------------------
 // Visual Style 対応
@@ -3927,77 +3928,37 @@ std::string GetHtmlFileName()
 
 BOOL ExecBrowser()
 {
-	std::string Html;
-	// WWA Wing部分
-	std::string MapDataFileName(g_szSelectFile);
-	std::string WwaWingHtml =
-		"<div id=\"wrapper\">\n"
-		"  <div\n"
-		"    id=\"wwa-wrapper\"\n"
-		"    class=\"wwa-size-box\"\n"
-		"    data-wwa-mapdata=\"" + MapDataFileName + "\"\n"
-		"    data-wwa-loader=\"wwaload.js\"\n"
-		"    data-wwa-urlgate-enable=\"true\"\n"
-		"    data-wwa-title-img=\"cover.gif\"\n"
-		"  ></div>\n"
-		"</div>";
-
-	// テンプレートファイル読み込み
-	HANDLE tFile;
-	static TCHAR TemplateFile[250];
-	int Hoge;
-
-	// FIXME: 常に "\0" しか返ってこない
-	GetPrivateProfileString("Main", "TemplateFile", "\0", TemplateFile, 250, g_szSettingFile);
-	Hoge = GetPrivateProfileInt("Main", "PositionX", 100, g_szSettingFile);
-	if (TemplateFile != "\0") {
-		tFile = CreateFile(TemplateFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
-
-	if (TemplateFile == "\0" || tFile == INVALID_HANDLE_VALUE) {
-		if (TemplateFile != "\0") {
-			CloseHandle(tFile);
-			if (MessageBox(g_hWnd, "テンプレートファイルが見つかりませんでした。\nテンプレートファイルを指定しない状態でHTMLファイルを作成しますか？", "読み込み失敗", MB_YESNO) == IDNO) {
-				return FALSE;
-			}
-		}
-		// HTML文作成
-		Html =
-			"<!DOCTYPE HTML>\n"
-			"<html lang=\"ja\">\n"
-			"<head>\n"
-			"  <meta charset=\"UTF-8\">\n"
-			"  <link rel=\"stylesheet\" href=\"wwa.css\">\n"
-			"  <link rel=\"stylesheet\" href=\"style.css\">\n"
-			"  <script src=\"wwa.js\"></script>\n"
-			"  <script src=\"audio/audio.min.js\"></script>\n"
-			"  <title><!--TITLE--></title>\n"
-			"</head>\n"
-			"<body>\n"
-			"<!--WWAWING-->\n"
-			"  <footer id=\"copyright\">\n"
-			"    <p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2017 NAO</p>\n"
-			"    <p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2019 WWA Wing Team</p>\n"
-			"  </footer>\n"
-			"</body>\n"
-			"</html>\n";
-	} else {
-		char StrHtml[1000];
-		LPDWORD ReadResult;
-		ReadFile(tFile, StrHtml, 1000, ReadResult, NULL);
-		if (ReadResult == 0) {
-			MessageBox(g_hWnd, "テンプレートファイルの読み込みに失敗しました。", "エラー", MB_OK);
-
-			CloseHandle(tFile);
-			return FALSE;
-		}
-		CloseHandle(tFile);
-		Html = std::string(StrHtml);
-	}
-
-	// パーツの置き換え
-	Html = ReplaceString(Html, "<!--TITLE-->", g_worldName);
-	Html = ReplaceString(Html, "<!--WWAWING-->", WwaWingHtml);
+	// HTML作成
+	CStringW WorldName = CT2A(g_worldName, CP_ACP);
+	CStringW MapDataFileName = CT2A(g_szSelectFile, CP_ACP);
+	CStringW Html = 
+		"<!DOCTYPE HTML>\n"
+		"<html lang=\"ja\">\n"
+		"<head>\n"
+		"  <meta charset=\"UTF-8\">\n"
+		"  <link rel=\"stylesheet\" href=\"wwa.css\">\n"
+		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
+		"  <script src=\"wwa.js\"></script>\n"
+		"  <script src=\"audio/audio.min.js\"></script>\n"
+		"  <title>" + WorldName + "</title>\n"
+		"</head>\n"
+		"<body>\n"
+		"  <div id=\"wrapper\">\n"
+		"    <div\n"
+		"      id=\"wwa-wrapper\"\n"
+		"      class=\"wwa-size-box\"\n"
+		"      data-wwa-mapdata=\"" + MapDataFileName + "\"\n"
+		"      data-wwa-loader=\"wwaload.js\"\n"
+		"      data-wwa-urlgate-enable=\"true\"\n"
+		"      data-wwa-title-img=\"cover.gif\"\n"
+		"    ></div>\n"
+		"  </div>\n"
+		"  <footer id=\"copyright\">\n"
+		"    <p>Internet RPG &quot;<a href=\"http://www.wwajp.com\">World Wide Adventure</a>&quot; &copy;1996-2017 NAO</p>\n"
+		"    <p>&quot;<a href=\"http://wwawing.com/\">WWA Wing</a>&quot; &copy;2013-2019 WWA Wing Team</p>\n"
+		"  </footer>\n"
+		"</body>\n"
+		"</html>\n";
 
 	// ファイル名作成
 	std::string HtmlFileName;
@@ -4018,7 +3979,7 @@ BOOL ExecBrowser()
 		return FALSE;
 	}
 
-	WriteFile(hFile, Html.c_str(), Html.length(), &dwWritten, NULL);
+	WriteFile(hFile, Html, Html.GetLength(), &dwWritten, NULL);
 	CloseHandle(hFile);
 
 	// ブラウザの起動
