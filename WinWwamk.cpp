@@ -211,7 +211,6 @@ BOOL g_MouseDrag = FALSE;	//マウスのドラッグ判定用
 BOOL g_bLoadGif = TRUE;		//GIFファイルが読み込めるか？
 BOOL g_bUpdate = FALSE;		//更新確認フラグ
 BOOL g_bInitial = FALSE;	//初期化済みか？
-BOOL g_bWinXP = FALSE;		//XP使用の場合
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
@@ -461,9 +460,6 @@ void RestoreUndoData();
 //メモリ取得
 // GIF画像の読み込み
 BOOL ReadGifImage();
-
-
-
 
 
 //##------------------------------------------------------------------
@@ -1107,11 +1103,6 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 		UpdateWindow( g_hWnd );
 	}
 
-	//WindowsXPかを判定
-	OsVersion.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
-	GetVersionEx( &OsVersion );
-	if (((OsVersion.dwPlatformId >= 2) && (OsVersion.dwBuildNumber >= 2500)) || (OsVersion.dwPlatformId >= 3)) g_bWinXP = TRUE;
-
 	//初期ファイル名設定
 	unsigned int i, j;
 	if( strlen(pszCmdLine) > 0 ){
@@ -1151,8 +1142,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	RECT rectBox;
 	GetWindowRect( g_hWnd, &rectBox );
 	GetWindowRect( g_hDlgSelectObject, &rect );
-	if( GetSystemMetrics(SM_CXSCREEN) > 800 ) MoveWindow( g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
-	else MoveWindow( g_hDlgSelectObject, 270, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+	MoveWindow( g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	GetWindowRect( g_hDlgSelectObject, &rectBox );
 	GetWindowRect( g_hDlgSelectMap, &rect );
 	MoveWindow( g_hDlgSelectMap, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
@@ -1387,10 +1377,8 @@ void PaintStatus( BOOL flag )
 	//ステータス非表示
 	HDC hDC = GetDC( g_hWnd );
 	char str[100];
-	int x, y;
-
-	if( g_bWinXP == TRUE ) y = 1;
-	else y = 2;
+	int x;
+	const int y = 1;
 
 	SetBkMode( g_hmDCExtra, TRANSPARENT );
 	Rectangle( g_hmDCExtra, 0, 0, 440 ,20 );
@@ -2400,7 +2388,7 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		else if( (x > 50) && (x < 90) && (y > 4) && (y < 44) ) g_AtrSelectChara = ATR_X2;
 		else break;
 		
-		const int SelectCharaDialogY = 100;
+		const int SelectCharaDialogY = 80;
 		//ダイアログの作成
 		DestroyWindow( g_hDlgSelectChara );
 		g_hModeSelectChara = 1;
@@ -2410,7 +2398,7 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		RECT rectBox;
 		GetWindowRect( g_hDlgObject, &rectBox );
 		GetWindowRect( g_hDlgSelectChara, &rect );
-		MoveWindow( g_hDlgSelectChara, rectBox.left, SelectCharaDialogY, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+		MoveWindow( g_hDlgSelectChara, rectBox.left, rectBox.top + SelectCharaDialogY, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgSelectChara, SW_SHOW );
 		break;
 	}
@@ -2680,6 +2668,17 @@ LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		InvalidateRect( hWnd, NULL, FALSE );
 		break;
 	}
+	case WM_MOUSEWHEEL: {
+		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) {
+			if (g_ScrCGChara > 0) --g_ScrCGChara;
+			SetScrollPos(hWnd, SB_VERT, g_ScrCGChara, 1);
+		} else {
+			if (g_ScrCGChara < g_ScrCGCharaMax) ++g_ScrCGChara;
+			SetScrollPos(hWnd, SB_VERT, g_ScrCGChara, 1);
+		}
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
 	case WM_PAINT: {
 		HDC hDC = GetDC(hWnd);
 		BitBlt( hDC, 0, 0, 200, 40*17, NULL, 0, 0, WHITENESS );
@@ -2888,11 +2887,7 @@ void DisplayObjectDialog()
 	//ダイアログ移動
 	GetWindowRect( g_hDlgSelectObject, &rectBox );
 	GetWindowRect( g_hDlgObject, &rect );
-	if( GetSystemMetrics(SM_CXSCREEN) > 800 ){
-		MoveWindow( g_hDlgObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
-	} else {
-		MoveWindow(g_hDlgObject, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	}
+	MoveWindow( g_hDlgObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgObject, SW_SHOW );
 
 	//ダイアログの作成
@@ -2900,11 +2895,13 @@ void DisplayObjectDialog()
 				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) || (type == OBJECT_LOCALGATE) ){
 		if( type == OBJECT_SELECT ) g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA2), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
 		else g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
+
 		//ダイアログ移動
 		GetWindowRect( g_hDlgObject, &rectBox );
 		GetWindowRect( g_hDlgExtra, &rect );
 		MoveWindow( g_hDlgExtra, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgExtra, SW_SHOW );
+
 		//フォーカス移動
 		SetFocus( g_hDlgObject );
 		//拡張出現キャラクタの設定
