@@ -2048,7 +2048,7 @@ void paintMapAll( HDC hDC )
 
 
 //##------------------------------------------------------------------
-// 選択ダイアログの描画
+// 物体選択ダイアログの描画
 
 void PaintWindowSelectObject( HWND hWnd )
 {
@@ -2106,7 +2106,7 @@ void PaintWindowSelectMap( HWND hWnd )
 	char str[50];
 
 	//イメージの描画
-	for( j = 0 ; j < 3 ; ++j ){
+	for( j = 0 ; j < DIALOG_MAP_SELECT_LINE ; ++j ){
 		for( i = 0 ; i < 10 ; ++i ){
 			x = mapAttribute[i +j*10 +g_ScrMap*10][ATR_X];
 			y = mapAttribute[i +j*10 +g_ScrMap*10][ATR_Y];
@@ -2114,18 +2114,15 @@ void PaintWindowSelectMap( HWND hWnd )
 		}
 	}
 	//文字表示
-	SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-	sprintf( str, "ﾊﾟｰﾂ番号: %d　　", g_SelectMapData );
-	TextOut( hDC, 3, 124, str, strlen(str) );
-	sprintf( str, "左上: %d　　", g_ScrMap *10 );
-	TextOut( hDC, 3+16*7, 124, str, strlen(str) );
+	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectMapData, FALSE);
+	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrMap * 10, FALSE);
 
 	//境界線表示
 	hpen = CreatePen( PS_SOLID,0,RGB(255,0,0) );
 	hpenOld = (HPEN)SelectObject( hDC, hpen );
 
 	//枠表示
-	if( (selectY-g_ScrMap)*40 < 120 ){
+	if( (selectY-g_ScrMap)*40 < 40 * DIALOG_MAP_SELECT_LINE ){
 		DrawRect( hDC, selectX*40, (selectY-g_ScrMap)*40, 40, 40 );
 		DrawRect( hDC, selectX*40+1, (selectY-g_ScrMap)*40+1, 38, 38 );
 	}
@@ -2269,7 +2266,7 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 {
 	switch( message ){
 	case WM_INITDIALOG:{
-		SetScrollRange( hWnd, SB_VERT, 0, ((g_iMapPartsMax /10) -3), FALSE );
+		SetScrollRange( hWnd, SB_VERT, 0, ((g_iMapPartsMax /10) -DIALOG_MAP_SELECT_LINE), FALSE );
 		break;
 	}
 	case WM_LBUTTONDOWN:{
@@ -2277,7 +2274,7 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
 		if( x < 400 ) g_SelectMapX = x /40;
-		if( y < 120 ) g_SelectMapY = g_ScrMap +y /40;
+		if( y < 40 * DIALOG_MAP_SELECT_LINE ) g_SelectMapY = g_ScrMap +y /40;
 		InvalidateRect( hWnd, NULL, FALSE );
 		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		//現在選択中の背景を設定
@@ -2303,7 +2300,7 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
 		if( x < 400 ) g_SelectMapX = x /40;
-		if( y < 120 ) g_SelectMapY = g_ScrMap +y /40;
+		if( y < 40 * DIALOG_MAP_SELECT_LINE ) g_SelectMapY = g_ScrMap +y /40;
 		InvalidateRect( hWnd, NULL, FALSE );
 		//現在選択中の背景を設定
 		g_SelectMapData = g_SelectMapX +g_SelectMapY *10;
@@ -2346,7 +2343,7 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 
 	case WM_VSCROLL:
 		if( LOWORD(wParam) == SB_LINEDOWN ){
-			if( g_ScrMap < ((g_iMapPartsMax /10) -3) ) ++g_ScrMap;
+			if( g_ScrMap < ((g_iMapPartsMax /10) - DIALOG_MAP_SELECT_LINE) ) ++g_ScrMap;
 			SetScrollPos( hWnd, SB_VERT, g_ScrMap, 1 );
 		} else if( LOWORD(wParam) == SB_LINEUP ){
 			if( g_ScrMap > 0 ) --g_ScrMap;
@@ -2358,7 +2355,7 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 			g_ScrMap = HIWORD(wParam);
 			SetScrollPos( hWnd, SB_VERT, g_ScrMap, 1 );
 		} else if( LOWORD(wParam) == SB_PAGEDOWN ){
-			if( g_ScrMap < ((g_iMapPartsMax /10) -3) ) ++g_ScrMap;
+			if( g_ScrMap < ((g_iMapPartsMax /10) - DIALOG_MAP_SELECT_LINE) ) ++g_ScrMap;
 			SetScrollPos( hWnd, SB_VERT, g_ScrMap, 1 );
 		} else if( LOWORD(wParam) == SB_PAGEUP ){
 			if( g_ScrMap > 0 ) --g_ScrMap;
@@ -2366,6 +2363,19 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		}
 		InvalidateRect( hWnd, NULL, FALSE );
 		break;
+
+	case WM_MOUSEWHEEL: {
+		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) {
+			if (g_ScrMap > 0) --g_ScrMap;
+			SetScrollPos(hWnd, SB_VERT, g_ScrMap, 1);
+		}
+		else {
+			if (g_ScrMap < ((g_iMapPartsMax / 10) - DIALOG_MAP_SELECT_LINE)) ++g_ScrMap;
+			SetScrollPos(hWnd, SB_VERT, g_ScrMap, 1);
+		}
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
 
 	case WM_PAINT:
 		PaintWindowSelectMap( hWnd );
@@ -2993,9 +3003,9 @@ void DisplayMapDialog()
 		}
 	}
 	//ダイアログ移動
-	GetWindowRect( g_hDlgSelectMap, &rectBox );
+	GetWindowRect( g_hDlgSelectObject, &rectBox );
 	GetWindowRect( g_hDlgMap, &rect );
-	MoveWindow( g_hDlgMap, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+	MoveWindow( g_hDlgMap, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgMap, SW_SHOW );
 
 	//ダイアログの作成
@@ -3004,7 +3014,7 @@ void DisplayMapDialog()
 		//ダイアログ移動
 		GetWindowRect( g_hDlgMap, &rectBox );
 		GetWindowRect( g_hDlgExtra, &rect );
-		MoveWindow( g_hDlgExtra, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+		MoveWindow( g_hDlgExtra, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgExtra, SW_SHOW );
 		//フォーカス移動
 		SetFocus( g_hDlgMap );
