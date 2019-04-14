@@ -2071,12 +2071,8 @@ void PaintWindowSelectObject( HWND hWnd )
 		}
 	}
 
-	//ï∂éöï\é¶
-	SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-	sprintf( str, "î‘çÜ: %04d", g_SelectObjectData );
-	TextOut( hDC, 4, (40 * DIALOG_OBJECT_SELECT_LINE) + 8, str, strlen(str) );
-	sprintf( str, "ç∂è„: %04d", g_ScrObject *10 );
-	TextOut( hDC, 4+16*6, (40 * DIALOG_OBJECT_SELECT_LINE) + 8, str, strlen(str) );
+	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectObjectData, FALSE);
+	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrObject * 10, FALSE);
 
 	//ã´äEê¸ï\é¶
 	hpen = CreatePen( PS_SOLID,0,RGB(255,0,0) );
