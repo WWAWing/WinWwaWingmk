@@ -2476,6 +2476,7 @@ LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		if( (x > 5) && (x < 45) && (y > 4) && (y < 44) ) g_AtrSelectChara = ATR_X;
 		else break;
 		
+		const int SelectCharaDialogY = 80;
 		//ダイアログの作成
 		DestroyWindow( g_hDlgSelectChara );
 		g_hModeSelectChara = 0;
@@ -2484,7 +2485,7 @@ LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		RECT rect, rectBox;
 		GetWindowRect( g_hDlgMap, &rectBox );
 		GetWindowRect( g_hDlgSelectChara, &rect );
-		MoveWindow( g_hDlgSelectChara, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
+		MoveWindow( g_hDlgSelectChara, rectBox.left, rectBox.top + SelectCharaDialogY, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgSelectChara, SW_SHOW );
 		break;
 	}
