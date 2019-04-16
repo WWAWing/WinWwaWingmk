@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by Script2.rc
+// Microsoft Visual C++ で生成されたインクルード ファイル。
+// Script2.rc で使用
 //
 #define IDR_MENU1                       101
 #define IDD_DIALOG_EDITMAP              102
@@ -198,13 +198,16 @@
 #define ID_MENU_MAPCOPY                 40033
 #define ID_MENU_MAPPASTE                40034
 #define ID_MENU_BASICMES                40035
+#define ID_Menu                         40036
+#define ID_MARKDRAW                     40037
+#define ID_MENU_MARKDRAW                40038
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        133
-#define _APS_NEXT_COMMAND_VALUE         40036
+#define _APS_NEXT_COMMAND_VALUE         40039
 #define _APS_NEXT_CONTROL_VALUE         1096
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
