@@ -3730,6 +3730,7 @@ void SetMessageData( int *point, char *str )
 		//メッセージ格納
 		strcpy( g_StrMessage[*point], str );
 	} else if( strlen(str) == 0 ){
+		g_StrMessage[*point][0] = '\0';
 		*point = 0;
 	} else {
 		//メッセージ格納
