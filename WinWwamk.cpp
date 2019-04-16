@@ -4,7 +4,6 @@
 #include <olectl.h>
 #include "resource.h"
 #include "cdib.hpp"
-#include <string>
 #include <atlstr.h>
 
 //##------------------------------------------------------------------
@@ -456,10 +455,8 @@ int GetCharaNumber( HWND hWnd );
 LRESULT CALLBACK DialogProcExtraObject( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK DialogProcExtraMap( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 
-// 文字列を置き換えする
-std::string ReplaceString(std::string TargetText, std::string OldString, std::string NewString);
 // 拡張子を取り除いたファイル名を取得する
-std::string GetHtmlFileName();
+CString GetHtmlFileName();
 // ブラウザを起動する
 BOOL ExecBrowser();
 
@@ -3898,28 +3895,14 @@ int GetCharaNumber( HWND hWnd )
 
 
 //##------------------------------------------------------------------
-// 文字列の置き換え
-
-std::string ReplaceString( std::string TargetText, std::string OldString, std::string NewString )
-{
-	std::string::size_type OldStringPosition = TargetText.find(OldString);
-
-	std::string NewText(TargetText);
-	NewText.replace(OldStringPosition, OldString.length(), NewString);
-
-	return NewText;
-}
-
-
-//##------------------------------------------------------------------
 // 出力するHTMLファイル名を取得
 
-std::string GetHtmlFileName()
+CString GetHtmlFileName()
 {
-	std::string MapDataFileName(g_szSelectFile);
-	std::string::size_type PeriodPosition = MapDataFileName.find_last_of(".");
+	CString MapDataFileName(g_szSelectFile);
+	MapDataFileName.Replace(".dat", ".html");
 
-	return MapDataFileName.substr(0, PeriodPosition) + ".html";
+	return MapDataFileName;
 }
 
 
@@ -3929,9 +3912,8 @@ std::string GetHtmlFileName()
 BOOL ExecBrowser()
 {
 	// HTML作成
-	CStringW WorldName = CT2A(g_worldName, CP_ACP);
-	CStringW MapDataFileName = CT2A(g_szSelectFile, CP_ACP);
-	CStringW Html = 
+	CString MapDataFileName = g_szSelectFile;
+	CString Html = 
 		"<!DOCTYPE HTML>\n"
 		"<html lang=\"ja\">\n"
 		"<head>\n"
@@ -3940,7 +3922,7 @@ BOOL ExecBrowser()
 		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
 		"  <script src=\"wwa.js\"></script>\n"
 		"  <script src=\"audio/audio.min.js\"></script>\n"
-		"  <title>" + WorldName + "</title>\n"
+		"  <title>World Wide Adventure Wing</title>\n"
 		"</head>\n"
 		"<body>\n"
 		"  <div id=\"wrapper\">\n"
@@ -3961,19 +3943,17 @@ BOOL ExecBrowser()
 		"</html>\n";
 
 	// ファイル名作成
-	std::string HtmlFileName;
-	const char *HtmlFileNameString;
+	CString HtmlFileName;
 	HtmlFileName = GetHtmlFileName();
-	HtmlFileNameString = HtmlFileName.c_str();
 
 	// データの書き込み
 	HANDLE hFile;
 	DWORD dwWritten;
 
-	hFile = CreateFile(HtmlFileNameString, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	hFile = CreateFile(HtmlFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE){
-		std::string ErrorMessage = "「" + HtmlFileName + "」ファイルが作成または書き込みできません。";
-		MessageBox(g_hWnd, ErrorMessage.c_str(), "注意", MB_OK);
+		CString ErrorMessage = "「" + HtmlFileName + "」ファイルが作成または書き込みできません。";
+		MessageBox(g_hWnd, ErrorMessage, "注意", MB_OK);
 
 		CloseHandle(hFile);
 		return FALSE;
@@ -3983,9 +3963,9 @@ BOOL ExecBrowser()
 	CloseHandle(hFile);
 
 	// ブラウザの起動
-	std::string Message = "「" + HtmlFileName + "」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)";
-	if (MessageBox(g_hWnd, Message.c_str(), "作成完了", MB_YESNO) == IDYES){
-		if ((int)ShellExecute(g_hWnd, "open", HtmlFileNameString, NULL, NULL, SW_SHOWNORMAL) <= 32){
+	CString Message = "「" + HtmlFileName + "」ファイルを出力しました。\nHTMLファイルをブラウザで見ますか？\n(デバッグツールが必要になる場合があります)";
+	if (MessageBox(g_hWnd, Message, "作成完了", MB_YESNO) == IDYES){
+		if ((int)ShellExecute(g_hWnd, "open", HtmlFileName, NULL, NULL, SW_SHOWNORMAL) <= 32){
 			MessageBox(g_hWnd, "ブラウザ起動エラー\nブラウザソフトウェアがインストールされているか確認してください。", "起動失敗", MB_OK);
 			return FALSE;
 		}
