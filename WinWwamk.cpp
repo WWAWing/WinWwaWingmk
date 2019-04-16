@@ -1774,6 +1774,8 @@ BOOL SaveMapData( char *FileName )
 	int checkData = 0;
 	char szSavePassword[30];
 	int xmax, ymax;
+	// 各メッセージデータが利用されているか確認する配列
+	BOOL usedMessage[MESSAGE_NUMBER_MAX];
 
 	//ダイアログ閉じる
 	DestroyWindow( g_hDlgObject );
@@ -1781,6 +1783,7 @@ BOOL SaveMapData( char *FileName )
 	DestroyWindow( g_hDlgSelectChara );
 
 	for( i = 0 ; i < 100 ; ++i ) PressData[i] = 0;
+	for (i = 0; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
 
 	PressData[DATA_VERSION] = 31;
 	PressData[DATA_STATUS_ENERGYMAX] = (char)statusEnergyMax;
@@ -1855,6 +1858,10 @@ BOOL SaveMapData( char *FileName )
 	PressData[DATA_MAP_COUNT +1] = (char)(number >> 8);
 
 	for( i = 0 ; i < number ; ++i ){
+		//メッセージデータに使用済みと記録
+		if (mapAttribute[i][ATR_STRING] != 0) {
+			usedMessage[mapAttribute[i][ATR_STRING]] = TRUE;
+		}
 		for( j = 0 ; j < MAP_ATR_MAX ; ++j ){
 			PressData[pointer] = (char)mapAttribute[i][j];
 			++pointer;
@@ -1872,6 +1879,9 @@ BOOL SaveMapData( char *FileName )
 	PressData[DATA_OBJECT_COUNT +1] = (char)(number >> 8);
 
 	for( i = 0 ; i < number ; ++i ){
+		if (objectAttribute[i][ATR_STRING] != 0) {
+			usedMessage[objectAttribute[i][ATR_STRING]] = TRUE;
+		}
 		for( j = 0 ; j < OBJECT_ATR_MAX ; ++j ){
 			PressData[pointer] = (char)objectAttribute[i][j];
 			++pointer;
@@ -1938,7 +1948,13 @@ BOOL SaveMapData( char *FileName )
 	//新暗証番号
 	saveMapString( szSavePassword );
 	//メッセージデータの書き込み
-	for( i = 0 ; i < g_iMesNumberMax ; ++i ) saveMapString( g_StrMessage[i] );
+	for (i = 0; i < g_iMesNumberMax; ++i) {
+		if (usedMessage[i] == TRUE) {
+			saveMapString(g_StrMessage[i]);
+		} else {
+			saveMapString("");
+		}
+	}
 	//その他データ
 	saveMapString( g_worldName );
 	saveMapString( "" );
