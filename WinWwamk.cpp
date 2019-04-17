@@ -1693,6 +1693,7 @@ BOOL LoadMapData( char *FileName )
 	}
 
 	//メッセージデータの読みだし
+	ZeroMemory(g_StrMessage, MESSAGE_NUMBER_MAX * MESSAGE_STR_MAX);
 	pointer = point2;
 
 	//バージョンアップ中テスト互換用
