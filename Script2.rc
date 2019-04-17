@@ -29,40 +29,40 @@ BEGIN
     POPUP "ファイル(&F)"
     BEGIN
         MENUITEM "新規作成(&N)",                    ID_MENU_NEW
-        MENUITEM "ﾏｯﾌﾟﾃﾞｰﾀ 読み込み(&O)\tCtrl+O",   ID_MENU_LOAD
-        MENUITEM "ﾏｯﾌﾟﾃﾞｰﾀ 上書き保存(&S)\tCtrl+S",  ID_MENU_SAVEA
-        MENUITEM "ﾏｯﾌﾟﾃﾞｰﾀ 名前を付けて保存(&A)",       ID_MENU_SAVE
+        MENUITEM "マップデータ読み込み(&O)\tCtrl+O",      ID_MENU_LOAD
+        MENUITEM "マップデータ上書き保存(&S)\tCtrl+S",     ID_MENU_SAVEA
+        MENUITEM "マップデータ名前を付けて保存(&A)",          ID_MENU_SAVE
         MENUITEM SEPARATOR
-        MENUITEM "ﾏｯﾌﾟﾃﾞｰﾀをﾌﾞﾗｳｻﾞで見る(&L)\tCtrl+L", ID_MENU_EXEC
+        MENUITEM "マップデータをブラウザで見る(&L)\tCtrl+L",  ID_MENU_EXEC
         MENUITEM SEPARATOR
         MENUITEM "終了(&X)",                      ID_MENU_END
     END
     POPUP "編集(&E)"
     BEGIN
         MENUITEM "基本設定の編集(&F)\tF8",             ID_MENU_FOUNDATION
-        MENUITEM "ｼｽﾃﾑﾒｯｾｰｼﾞの設定と編集",            ID_MENU_BASICMES
+        MENUITEM "システムメッセージの設定と編集",             ID_MENU_BASICMES
         MENUITEM SEPARATOR
         MENUITEM "戦闘結果の計算(&C)\tF9",             ID_MENU_BATTLE
         MENUITEM SEPARATOR
         MENUITEM "Undo - 元に戻す(&Z)\tCtrl+Z",     ID_MENU_UNDO
-        MENUITEM "選択中のﾊﾟｰﾂを複写(&C)\tCtrl+C",     ID_MENU_COPY
-        MENUITEM "選択位置にﾊﾟｰﾂを貼り付け(&V)\tCtrl+V",  ID_MENU_PASTE
-        MENUITEM "現在のﾏｯﾌﾟ画面複写\tCtrl+Shift+C",   ID_MENU_MAPCOPY
+        MENUITEM "選択中のパーツを複写(&C)\tCtrl+C",      ID_MENU_COPY
+        MENUITEM "選択位置にパーツを貼り付け(&V)\tCtrl+V",   ID_MENU_PASTE
+        MENUITEM "現在のマップ画面複写\tCtrl+Shift+C",    ID_MENU_MAPCOPY
         MENUITEM "複写した画面を現在位置に貼り付け\tCtrl+Shift+V", ID_MENU_MAPPASTE
         MENUITEM SEPARATOR
-        MENUITEM "ﾏｯﾌﾟ画面に背景設置\tF1",             ID_MENU_PUTMAP
-        MENUITEM "ﾏｯﾌﾟ画面に物体設置\tF2",             ID_MENU_PUTOBJ
-        MENUITEM "ｸﾘｯｸ位置の背景を編集\tF3",            ID_MENU_EDITMAP
-        MENUITEM "ｸﾘｯｸ位置の物体を編集\tF4",            ID_MENU_EDITOBJ
-        MENUITEM "ｸﾘｯｸ位置の物体を削除\tF5",            ID_MENU_DELOBJ
+        MENUITEM "マップ画面に背景設置\tF1",              ID_MENU_PUTMAP
+        MENUITEM "マップ画面に物体設置\tF2",              ID_MENU_PUTOBJ
+        MENUITEM "クリック位置の背景を編集\tF3",            ID_MENU_EDITMAP
+        MENUITEM "クリック位置の物体を編集\tF4",            ID_MENU_EDITOBJ
+        MENUITEM "クリック位置の物体を削除\tF5",            ID_MENU_DELOBJ
     END
     POPUP "表示(&V)"
     BEGIN
         MENUITEM "境界線の表示切替(&Q)\tCtrl+Q",        ID_MENU_LINEDRAW
         MENUITEM "物体パーツ番号の表示切替(&W)\tCtrl+W",    ID_MENU_MARKDRAW
-        MENUITEM "ｸｲｯｸﾋﾞｭｰｳｨﾝﾄﾞｳの表示",           ID_MENU_QVIEW, GRAYED
-        MENUITEM "物体ﾊﾟｰﾂ選択ｳｨﾝﾄﾞｳの表示",           ID_MENU_OBJWINDOW, GRAYED
-        MENUITEM "背景ﾊﾟｰﾂ選択ｳｨﾝﾄﾞｳの表示",           ID_MENU_MAPWINDOW, GRAYED
+        MENUITEM "クイックビューウインドウの表示",             ID_MENU_QVIEW, GRAYED
+        MENUITEM "物体パーツ選択ウインドウの表示",             ID_MENU_OBJWINDOW, GRAYED
+        MENUITEM "背景パーツ選択ウインドウの表示",             ID_MENU_MAPWINDOW, GRAYED
     END
 END
 
@@ -129,13 +129,18 @@ END
 // Dialog
 //
 
-IDD_DIALOG_EDITMAP DIALOG 0, 0, 238, 98
+IDD_DIALOG_EDITMAP DIALOGEX 0, 0, 238, 156
 STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_VSCROLL | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "背景パーツ選択"
-FONT 9, "ＭＳ Ｐゴシック"
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    PUSHBUTTON      "選択パーツ 編集",IDC_BUTTON_EDITMAP,111,82,60,14
-    PUSHBUTTON      "選択パーツ 消去",IDC_BUTTON_MAP_ERASE,173,82,54,14
+    PUSHBUTTON      "選択パーツ編集",IDC_BUTTON_EDITMAP,110,138,53,14
+    PUSHBUTTON      "選択パーツ消去",IDC_BUTTON_MAP_ERASE,170,138,53,14
+    EDITTEXT        IDC_EDIT_PARTS_NUMBER,42,140,18,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER | NOT WS_BORDER
+    LTEXT           "パーツ番号",IDC_STATIC_PARTS_NUMBER,6,140,34,8,SS_CENTERIMAGE
+    LTEXT           "左上",IDC_STATIC_CURRENT_POSITION,66,140,15,8
+    EDITTEXT        IDC_EDIT_CURRENT_POSITION,84,140,18,14,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER | NOT WS_BORDER
 END
 
 IDD_DIALOG_MONSTER DIALOG 0, 0, 147, 219
@@ -310,13 +315,18 @@ BEGIN
     PUSHBUTTON      "取り消し",ID_BUTTON_CANCEL,75,156,40,14
 END
 
-IDD_DIALOG_EDITOBJECT DIALOG 0, 0, 238, 98
+IDD_DIALOG_EDITOBJECT DIALOGEX 0, 0, 238, 156
 STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_VSCROLL | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "物体パーツ選択"
-FONT 9, "ＭＳ Ｐゴシック"
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    PUSHBUTTON      "選択パーツ 編集",IDC_BUTTON_EDITMAP,111,82,60,14
-    PUSHBUTTON      "選択パーツ 消去",IDC_BUTTON_MAP_ERASE,173,82,54,14
+    PUSHBUTTON      "選択パーツ編集",IDC_BUTTON_EDITMAP,110,138,53,14
+    PUSHBUTTON      "選択パーツ消去",IDC_BUTTON_MAP_ERASE,170,138,53,14
+    EDITTEXT        IDC_EDIT_PARTS_NUMBER,42,140,18,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER | NOT WS_BORDER
+    LTEXT           "パーツ番号",IDC_STATIC_PARTS_NUMBER,6,140,34,8,SS_CENTERIMAGE
+    LTEXT           "左上",IDC_STATIC_CURRENT_POSITION,66,140,15,8
+    EDITTEXT        IDC_EDIT_CURRENT_POSITION,84,140,18,14,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER | NOT WS_BORDER
 END
 
 IDD_DIALOG_URLOBJ DIALOG 0, 0, 212, 99
@@ -842,7 +852,7 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         TOPMARGIN, 7
-        BOTTOMMARGIN, 86
+        BOTTOMMARGIN, 152
     END
 
     IDD_DIALOG_URLOBJ, DIALOG
@@ -1021,6 +1031,22 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON_WWA            ICON                    "wwa.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_EDITOBJECT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_EDITMAP AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
 
 #endif    // 日本語 (日本) resources
 /////////////////////////////////////////////////////////////////////////////
