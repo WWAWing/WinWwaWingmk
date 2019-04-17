@@ -3913,6 +3913,20 @@ BOOL ExecBrowser()
 {
 	// HTMLçÏê¨
 	CString MapDataFileName = g_szSelectFile;
+	CString MapWorldName;
+	// ÉèÅ[ÉãÉhñºÇÃçÏê¨
+	{
+		WCHAR buff[200];
+		char Utf8Str[100];
+		int length;
+		
+		length = MultiByteToWideChar(CP_ACP, 0, g_worldName, sizeof(g_worldName), buff, sizeof(buff) / 2);
+		buff[length] = '\0';
+		WideCharToMultiByte(CP_UTF8, 0, buff, length + 1, Utf8Str, 100, CP_ACP, NULL);
+
+		MapWorldName = Utf8Str;
+	}
+	
 	CString Html = 
 		"<!DOCTYPE HTML>\n"
 		"<html lang=\"ja\">\n"
@@ -3922,7 +3936,7 @@ BOOL ExecBrowser()
 		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
 		"  <script src=\"wwa.js\"></script>\n"
 		"  <script src=\"audio/audio.min.js\"></script>\n"
-		"  <title>World Wide Adventure Wing</title>\n"
+		"  <title>" + MapWorldName + "</title>\n"
 		"</head>\n"
 		"<body>\n"
 		"  <div id=\"wrapper\">\n"
