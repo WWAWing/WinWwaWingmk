@@ -206,11 +206,12 @@ int g_EditMode;
 //フラグ
 BOOL g_bRestoreObjectDialog = FALSE;
 BOOL g_bRestoreMapDialog = FALSE;
-BOOL g_MapLineFlag = TRUE;	//境界線
-BOOL g_MouseDrag = FALSE;	//マウスのドラッグ判定用
-BOOL g_bLoadGif = TRUE;		//GIFファイルが読み込めるか？
-BOOL g_bUpdate = FALSE;		//更新確認フラグ
-BOOL g_bInitial = FALSE;	//初期化済みか？
+BOOL g_MapLineFlag = TRUE;      //境界線
+BOOL g_ObjectNumberFlag = TRUE; //物体パーツ番号表示
+BOOL g_MouseDrag = FALSE;	    //マウスのドラッグ判定用
+BOOL g_bLoadGif = TRUE;		    //GIFファイルが読み込めるか？
+BOOL g_bUpdate = FALSE;		    //更新確認フラグ
+BOOL g_bInitial = FALSE;	    //初期化済みか？
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
@@ -912,6 +913,11 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if( g_MapLineFlag == FALSE ) g_MapLineFlag = TRUE;
 			else g_MapLineFlag = FALSE;
 			InvalidateRect( g_hWnd, NULL, FALSE );
+		}
+		else if (LOWORD(wParam) == ID_MENU_MARKDRAW) {
+			if (g_ObjectNumberFlag == FALSE) g_ObjectNumberFlag = TRUE;
+			else g_ObjectNumberFlag = FALSE;
+			InvalidateRect(g_hWnd, NULL, FALSE);
 		}
 		//マップの新規作成
 		else if( LOWORD(wParam) == ID_MENU_NEW ){
@@ -2011,7 +2017,10 @@ void paintMapAll( HDC hDC )
 	//変数定義
 	int i, j;
 	int mdata;
-	
+	char objectNumber[10];
+	HFONT numberFont = CreateFont(14, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, FF_DONTCARE);
+	HFONT defaultFont = SelectFont(hDC, numberFont);
+
 	//マップ描画
 	for( j = 0 ; j < 11 ; ++j ){
 		for( i = 0 ; i < 11 ; ++i ){
@@ -2030,8 +2039,15 @@ void paintMapAll( HDC hDC )
 				BitBlt( hDC, i*40, j*40 +YTOP, 40, 40, g_hmDCAnd, 40*4, 0, SRCAND );
 				BitBlt( hDC, i*40, j*40 +YTOP, 40, 40, g_hmDCOr, 40*4, 0, SRCPAINT );
 			}
+			//透明パーツ識別マーク描画
+			if ( g_ObjectNumberFlag == TRUE && mdata != 0 ) {
+				sprintf(objectNumber, "%d", mdata);
+				TextOut(hDC, i * 40, j * 40 + YTOP, objectNumber, strlen(objectNumber));
+			}
 		}
 	}
+
+	SelectFont(hDC, defaultFont);
 }
 
 

@@ -203,13 +203,16 @@
 #define ID_MENU_MAPCOPY                 40033
 #define ID_MENU_MAPPASTE                40034
 #define ID_MENU_BASICMES                40035
+#define ID_Menu                         40036
+#define ID_MARKDRAW                     40037
+#define ID_MENU_MARKDRAW                40038
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         40036
+#define _APS_NEXT_COMMAND_VALUE         40039
 #define _APS_NEXT_CONTROL_VALUE         1103
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

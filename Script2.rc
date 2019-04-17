@@ -59,6 +59,7 @@ BEGIN
     POPUP "表示(&V)"
     BEGIN
         MENUITEM "境界線の表示切替(&Q)\tCtrl+Q",        ID_MENU_LINEDRAW
+        MENUITEM "物体パーツ番号の表示切替(&W)\tCtrl+W",    ID_MENU_MARKDRAW
         MENUITEM "クイックビューウインドウの表示",             ID_MENU_QVIEW, GRAYED
         MENUITEM "物体パーツ選択ウインドウの表示",             ID_MENU_OBJWINDOW, GRAYED
         MENUITEM "背景パーツ選択ウインドウの表示",             ID_MENU_MAPWINDOW, GRAYED
@@ -77,6 +78,7 @@ BEGIN
     "^S",           ID_MENU_SAVEA,          ASCII   
     "^L",           ID_MENU_EXEC,           ASCII   
     "^Q",           ID_MENU_LINEDRAW,       ASCII   
+    "^W",           ID_MENU_MARKDRAW,       ASCII   
     "^C",           ID_MENU_COPY,           ASCII   
     "^V",           ID_MENU_PASTE,          ASCII   
     "^Z",           ID_MENU_UNDO,           ASCII   
