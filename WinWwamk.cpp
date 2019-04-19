@@ -374,7 +374,7 @@ StructObject Map[] = {
 	{ END }
 };
 
-int g_EditId[] = {
+const int g_EditId[] = {
 	IDC_EDIT_CHARA,IDC_EDIT_CHARA2,IDC_EDIT_CHARA3,IDC_EDIT_CHARA4,IDC_EDIT_CHARA5,
 	IDC_EDIT_CHARA6,IDC_EDIT_CHARA7,IDC_EDIT_CHARA8,IDC_EDIT_CHARA9,IDC_EDIT_CHARA10,
 	IDC_EDIT_X,IDC_EDIT_X2,IDC_EDIT_X3,IDC_EDIT_X4,IDC_EDIT_X5,
@@ -3335,13 +3335,22 @@ void SetAppearChara( int mapNumber, BOOL flag )
 	int dataChara;
 	int x, y;
 	char str[30];
-	char szChara[30];
+	char partsNumberStr[30];
 
 	//拡張キャラクタ・データコンバート
 	for( i = 0 ; i < 10 ; ++i ){
 		GetDlgItemText( g_hDlgExtra, g_EditId[i], str, sizeof(str) );
-		strcpy( szChara, str );
-		dataChara = atoi( str );
+		strcpy( partsNumberStr, str );
+
+		// プラスマイナス記号によるパーツ番号インクリメント・デクリメント
+		if (str[0] == '+') {
+			dataChara = mapNumber + atoi(&str[1]);
+		} else if (str[0] == '-') {
+			dataChara = mapNumber - atoi(&str[1]);
+		} else {
+			dataChara = atoi( str );
+		}
+
 		if( (dataChara < 0) || (dataChara >= PARTS_NUMBER_MAX) ){
 			MessageBox( g_hWnd, "出現パーツ指定の「番号」の数値範囲が規定値を超えています。\n 0 以上、パーツ上限数以下を指定してください。", "警告！", MB_OK );
 		} else {
@@ -3362,7 +3371,7 @@ void SetAppearChara( int mapNumber, BOOL flag )
 		} else {
 			if( (str[0] == '+') || (str[0] == '-') ) x += 10000;
 			else if( (str[0] == 'p') || (str[0] == 'P') ) x = 9000;
-			else if( (str[0] == '\0') && (szChara[0] != '\0') ) x = 10000;
+			else if( (str[0] == '\0') && (partsNumberStr[0] != '\0') ) x = 10000;
 			
 			if( flag == TRUE ){
 				objectAttribute[mapNumber][20+i*4+1] = x;
@@ -3380,7 +3389,7 @@ void SetAppearChara( int mapNumber, BOOL flag )
 		} else {
 			if( (str[0] == '+') || (str[0] == '-') ) y += 10000;
 			else if( (str[0] == 'p') || (str[0] == 'P') ) y = 9000;
-			else if( (str[0] == '\0') && (szChara[0] != '\0') ) y = 10000;
+			else if( (str[0] == '\0') && (partsNumberStr[0] != '\0') ) y = 10000;
 			
 			//y = y << 8;
 			if( flag == TRUE ){
