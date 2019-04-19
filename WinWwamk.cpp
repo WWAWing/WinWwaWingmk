@@ -1429,7 +1429,7 @@ int unsignedByte( char numberByte ){
 //##------------------------------------------------------------------
 // 文字列の変換と読み出し
 
-void loadMapString( char *AnsiString )
+void loadMapString( char *AnsiString, BOOL GetString = TRUE )
 {
 	int length;
 	int plus = 0;
@@ -1448,6 +1448,11 @@ void loadMapString( char *AnsiString )
 	buffer[length +plus] = '\0';
 	pointer += length *2 +2;
 
+	// GetString が FALSE の場合はデータ取り込みはせずここで終わり
+	if (GetString == FALSE) {
+		AnsiString[0] = '\0';
+		return;
+	}
 	DWORD chaLength = WideCharToMultiByte( CP_ACP, 0, buffer, -1, NULL, 0, NULL, NULL );
 	WideCharToMultiByte( CP_ACP, 0, buffer, -1, AnsiString, chaLength, NULL, NULL );
 
@@ -1614,6 +1619,10 @@ BOOL LoadMapData( char *FileName )
 	ZeroMemory( &mapAttribute, sizeof(mapAttribute) );
 	ZeroMemory( &objectAttribute, sizeof(objectAttribute) );
 
+	// 各メッセージデータが利用されているか確認する配列
+	BOOL usedMessage[MESSAGE_NUMBER_MAX];
+	for (i = 0; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
+
 	if( g_MapData[DATA_VERSION] <= 29 ){
 		g_iMapAtrMax = 40;
 		g_iObjectAtrMax = 40;
@@ -1630,6 +1639,9 @@ BOOL LoadMapData( char *FileName )
 			mapAttribute[i][j] += data * 0x100;
 			++pointer;
 		}
+		if (mapAttribute[i][ATR_STRING] != 0) {
+			usedMessage[mapAttribute[i][ATR_STRING]] = TRUE;
+		}
 	}
 	//オブジェクトキャラクタ
 	for( i = 0 ; i < iDataObjectCount ; ++i ){
@@ -1639,6 +1651,9 @@ BOOL LoadMapData( char *FileName )
 			data = unsignedByte(g_MapData[pointer]);
 			objectAttribute[i][j] += data * 0x100;
 			++pointer;
+		}
+		if (objectAttribute[i][ATR_STRING] != 0) {
+			usedMessage[objectAttribute[i][ATR_STRING]] = TRUE;
 		}
 	}
 	//下位互換拡張キャラクタ変換
@@ -1704,7 +1719,11 @@ BOOL LoadMapData( char *FileName )
 		loadMapString( g_worldPassword );
 	}
 	for( i = 0 ; i < g_iMesNumberMax ; ++i ){
-		loadMapString( g_StrMessage[i] );
+		if (usedMessage[i] == TRUE) {
+			loadMapString( g_StrMessage[i] );
+		} else {
+			loadMapString(g_StrMessage[i], FALSE);
+		}
 	}
 	//その他データ
 	loadMapString( g_worldName );
@@ -1775,8 +1794,6 @@ BOOL SaveMapData( char *FileName )
 	int checkData = 0;
 	char szSavePassword[30];
 	int xmax, ymax;
-	// 各メッセージデータが利用されているか確認する配列
-	BOOL usedMessage[MESSAGE_NUMBER_MAX];
 
 	//ダイアログ閉じる
 	DestroyWindow( g_hDlgObject );
@@ -1784,7 +1801,6 @@ BOOL SaveMapData( char *FileName )
 	DestroyWindow( g_hDlgSelectChara );
 
 	for( i = 0 ; i < 100 ; ++i ) PressData[i] = 0;
-	for (i = 0; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
 
 	PressData[DATA_VERSION] = 31;
 	PressData[DATA_STATUS_ENERGYMAX] = (char)statusEnergyMax;
@@ -1859,10 +1875,6 @@ BOOL SaveMapData( char *FileName )
 	PressData[DATA_MAP_COUNT +1] = (char)(number >> 8);
 
 	for( i = 0 ; i < number ; ++i ){
-		//メッセージデータに使用済みと記録
-		if (mapAttribute[i][ATR_STRING] != 0) {
-			usedMessage[mapAttribute[i][ATR_STRING]] = TRUE;
-		}
 		for( j = 0 ; j < MAP_ATR_MAX ; ++j ){
 			PressData[pointer] = (char)mapAttribute[i][j];
 			++pointer;
@@ -1880,9 +1892,6 @@ BOOL SaveMapData( char *FileName )
 	PressData[DATA_OBJECT_COUNT +1] = (char)(number >> 8);
 
 	for( i = 0 ; i < number ; ++i ){
-		if (objectAttribute[i][ATR_STRING] != 0) {
-			usedMessage[objectAttribute[i][ATR_STRING]] = TRUE;
-		}
 		for( j = 0 ; j < OBJECT_ATR_MAX ; ++j ){
 			PressData[pointer] = (char)objectAttribute[i][j];
 			++pointer;
@@ -1950,11 +1959,7 @@ BOOL SaveMapData( char *FileName )
 	saveMapString( szSavePassword );
 	//メッセージデータの書き込み
 	for (i = 0; i < g_iMesNumberMax; ++i) {
-		if (usedMessage[i] == TRUE) {
-			saveMapString(g_StrMessage[i]);
-		} else {
-			saveMapString("");
-		}
+		saveMapString(g_StrMessage[i]);
 	}
 	//その他データ
 	saveMapString( g_worldName );
