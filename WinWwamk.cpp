@@ -222,7 +222,7 @@ char PressData[FILE_DATA_MAX];
 
 char g_szSettingFile[250] = "./WinWwamk.ini";	//設定ファイル名
 char g_szSelectFile[250] = "wwamap.dat";		//ファイル名
-char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.2";
+char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.1.7";
 char g_szSelectDir[250];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
