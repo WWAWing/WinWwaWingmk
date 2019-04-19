@@ -1440,7 +1440,7 @@ int unsignedByte( char numberByte ){
 //##------------------------------------------------------------------
 // 文字列の変換と読み出し
 
-void loadMapString( char *AnsiString )
+void loadMapString( char *AnsiString, BOOL GetString = TRUE )
 {
 	int length;
 	int plus = 0;
@@ -1459,6 +1459,11 @@ void loadMapString( char *AnsiString )
 	buffer[length +plus] = '\0';
 	pointer += length *2 +2;
 
+	// GetString が FALSE の場合はデータ取り込みはせずここで終わり
+	if (GetString == FALSE) {
+		AnsiString[0] = '\0';
+		return;
+	}
 	DWORD chaLength = WideCharToMultiByte( CP_ACP, 0, buffer, -1, NULL, 0, NULL, NULL );
 	WideCharToMultiByte( CP_ACP, 0, buffer, -1, AnsiString, chaLength, NULL, NULL );
 
@@ -1625,6 +1630,10 @@ BOOL LoadMapData( char *FileName )
 	ZeroMemory( &mapAttribute, sizeof(mapAttribute) );
 	ZeroMemory( &objectAttribute, sizeof(objectAttribute) );
 
+	// 各メッセージデータが利用されているか確認する配列
+	BOOL usedMessage[MESSAGE_NUMBER_MAX];
+	for (i = 0; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
+
 	if( g_MapData[DATA_VERSION] <= 29 ){
 		g_iMapAtrMax = 40;
 		g_iObjectAtrMax = 40;
@@ -1641,6 +1650,9 @@ BOOL LoadMapData( char *FileName )
 			mapAttribute[i][j] += data * 0x100;
 			++pointer;
 		}
+		if (mapAttribute[i][ATR_STRING] != 0) {
+			usedMessage[mapAttribute[i][ATR_STRING]] = TRUE;
+		}
 	}
 	//オブジェクトキャラクタ
 	for( i = 0 ; i < iDataObjectCount ; ++i ){
@@ -1650,6 +1662,9 @@ BOOL LoadMapData( char *FileName )
 			data = unsignedByte(g_MapData[pointer]);
 			objectAttribute[i][j] += data * 0x100;
 			++pointer;
+		}
+		if (objectAttribute[i][ATR_STRING] != 0) {
+			usedMessage[objectAttribute[i][ATR_STRING]] = TRUE;
 		}
 	}
 	//下位互換拡張キャラクタ変換
@@ -1704,6 +1719,7 @@ BOOL LoadMapData( char *FileName )
 	}
 
 	//メッセージデータの読みだし
+	ZeroMemory(g_StrMessage, MESSAGE_NUMBER_MAX * MESSAGE_STR_MAX);
 	pointer = point2;
 
 	//バージョンアップ中テスト互換用
@@ -1714,7 +1730,11 @@ BOOL LoadMapData( char *FileName )
 		loadMapString( g_worldPassword );
 	}
 	for( i = 0 ; i < g_iMesNumberMax ; ++i ){
-		loadMapString( g_StrMessage[i] );
+		if (usedMessage[i] == TRUE) {
+			loadMapString( g_StrMessage[i] );
+		} else {
+			loadMapString(g_StrMessage[i], FALSE);
+		}
 	}
 	//その他データ
 	loadMapString( g_worldName );
@@ -1949,7 +1969,9 @@ BOOL SaveMapData( char *FileName )
 	//新暗証番号
 	saveMapString( szSavePassword );
 	//メッセージデータの書き込み
-	for( i = 0 ; i < g_iMesNumberMax ; ++i ) saveMapString( g_StrMessage[i] );
+	for (i = 0; i < g_iMesNumberMax; ++i) {
+		saveMapString(g_StrMessage[i]);
+	}
 	//その他データ
 	saveMapString( g_worldName );
 	saveMapString( "" );
@@ -2220,7 +2242,10 @@ LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam,
 		//物体データの消去
 		else if( LOWORD(wParam) == IDC_BUTTON_MAP_ERASE ){
 			int i;
+			const int messageIndex = objectAttribute[g_SelectObjectData][ATR_STRING];
 			for( i = 0 ; i < OBJECT_ATR_MAX ; ++i ) objectAttribute[g_SelectObjectData][i] = 0;
+			g_StrMessage[messageIndex][0] = '\0';
+
 			InvalidateRect( hWnd, NULL, FALSE );
 			InvalidateRect( g_hWnd, NULL, FALSE );
 		}
@@ -2346,7 +2371,10 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		//背景データの消去
 		else if( LOWORD(wParam) == IDC_BUTTON_MAP_ERASE ){
 			int i;
+			const int messageIndex = mapAttribute[g_SelectMapData][ATR_STRING];
 			for( i = 0 ; i < MAP_ATR_MAX ; ++i ) mapAttribute[g_SelectMapData][i] = 0;
+			g_StrMessage[messageIndex][0] = '\0';
+			
 			InvalidateRect( hWnd, NULL, FALSE );
 			InvalidateRect( g_hWnd, NULL, FALSE );
 		}
@@ -3774,13 +3802,13 @@ void SetMessageData( int *point, char *str )
 		//メッセージ格納
 		strcpy( g_StrMessage[*point], str );
 	} else if( strlen(str) == 0 ){
+		g_StrMessage[*point][0] = '\0';
 		*point = 0;
 	} else {
 		//メッセージ格納
 		strcpy( g_StrMessage[*point], str );
 	}
 }
-
 
 
 //##------------------------------------------------------------------
