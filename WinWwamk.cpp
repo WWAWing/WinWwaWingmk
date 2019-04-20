@@ -3997,8 +3997,10 @@ int GetCharaNumber( HWND hWnd )
 CString GetHtmlFileName()
 {
 	CString MapDataFileName(g_szSelectFile);
+	if (MapDataFileName.Find(".dat") == -1) {
+		return MapDataFileName + ".html";
+	}
 	MapDataFileName.Replace(".dat", ".html");
-
 	return MapDataFileName;
 }
 
