@@ -35,6 +35,8 @@
 #define IDD_DIALOG_QVIEW                130
 #define IDD_DIALOG_LOCALGATE_OBJ        131
 #define IDD_DIALOG_BASICMES             132
+#define IDD_DIALOG1                     134
+#define IDD_DIALOG_MINIMAP              134
 #define IDC_BUTTON_EDITMAP              1000
 #define IDC_BUTTON_MAP_ERASE            1001
 #define IDC_COMBO_OBJECT                1002
@@ -211,7 +213,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        136
 #define _APS_NEXT_COMMAND_VALUE         40039
 #define _APS_NEXT_CONTROL_VALUE         1103
 #define _APS_NEXT_SYMED_VALUE           101

@@ -189,6 +189,7 @@ HWND	g_hDlgFileSave;
 HWND	g_hDlgCalculate = NULL;
 HWND	g_hDlgQuickView = NULL;
 HWND	g_hDlgBasicMes = NULL;
+HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
 HDC		g_hmDCAnd = NULL;
@@ -407,6 +408,8 @@ void PaintWindow();
 void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
+// ミニマップ描画
+void PaintMiniMap( HDC hDC );
 
 // 選択ダイアログプロシージャ
 LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
@@ -420,6 +423,8 @@ LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 基本メッセージダイアログプロシージャ
 LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+// ミニマップダイアログプロシージャ
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // 線と四角の描画
 void DrawLine( HDC hDC, int x, int y, int x2, int y2 );
@@ -1175,6 +1180,12 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	MoveWindow( g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgQuickView, SW_SHOW );
 
+	//ミニマップ
+	g_hDlgMiniMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_MINIMAP), g_hWnd, (DLGPROC)MiniMapDialogProc);
+	GetWindowRect(g_hDlgMiniMap, &rect);
+	MoveWindow(g_hDlgMiniMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgMiniMap, SW_SHOW);
+
 	//画面色数取得
 	HDC hDC = GetDC( g_hWnd );
 	if( GetDeviceCaps(hDC,BITSPIXEL) == 8 ){
@@ -1305,6 +1316,7 @@ BOOL LoadBitmap()
 	ReleaseDC( g_hWnd,hDC );
 	//再描画
 	InvalidateRect( g_hWnd, NULL, FALSE );
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 	InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
 
@@ -1420,6 +1432,24 @@ void PaintStatus( BOOL flag )
 
 	BitBlt( hDC, 0, 0, 440, 20, g_hmDCExtra, 0, 0, SRCCOPY );
 	ReleaseDC( g_hWnd,hDC );
+}
+
+
+//##------------------------------------------------------------------
+// ミニマップ描画
+
+void PaintMiniMap(HDC hDC)
+{
+	int i, j, mdata;
+
+	for (j = 0; j < g_iMapSize; ++j) {
+		for (i = 0; i < g_iMapSize; ++i) {
+			//背景描画
+			mdata = map[j][i];
+			BitBlt(hDC, i * 10, j * 10, 10, 10, g_hmDC, mapAttribute[mdata][ATR_X] + 15, mapAttribute[mdata][ATR_Y] + 15, SRCCOPY);
+		}
+	}
+
 }
 
 
@@ -3654,6 +3684,20 @@ LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPA
 	return 0;
 }
 
+//##------------------------------------------------------------------
+// ミニマップダイアログプロシージャ
+
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_PAINT:
+		HDC hDC;
+		hDC = GetDC(hWnd);
+		PaintMiniMap(hDC);
+		break;
+	}
+	return 0;
+}
 
 
 //##------------------------------------------------------------------
@@ -3878,6 +3922,7 @@ void MakeNewMap()
 	InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
 	InvalidateRect( g_hDlgQuickView, NULL, FALSE );
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 
 	MessageBox( g_hWnd, "マップを新規作成しました。\n画面には何も表示されなくなりますがこれで正常です。\n使用するＧＩＦ画像ファイルを選択後、\n新たにパーツを作成してマップに配置していってください。", "マップの新規作成", MB_OK );
 }
