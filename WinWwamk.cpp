@@ -119,6 +119,11 @@ char g_mapcgOld[100];
 int mapX, mapY;
 int mapXtop = 0;
 int mapYtop = 0;
+int miniMapXtop = 0;
+int miniMapYtop = 0;
+
+const int miniMapWidth = 44;
+const int miniMapHeight = 22;
 
 //ステータス
 int statusEnergyMax;
@@ -192,11 +197,13 @@ HWND	g_hDlgBasicMes = NULL;
 HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
+HDC		g_hmDCMini = NULL;
 HDC		g_hmDCAnd = NULL;
 HDC		g_hmDCOr = NULL;
 HDC		g_hmDCExtra = NULL;
 HBITMAP	g_hBitmap = NULL;
 HBITMAP	g_hBitmapHalf = NULL;
+HBITMAP g_hBitmapMini = NULL;
 HBITMAP	g_hBitmapGif = NULL;
 HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
@@ -409,7 +416,7 @@ void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
 // ミニマップ描画
-void PaintMiniMap( HDC hDC );
+void PaintMiniMap( HWND hWnd );
 
 // 選択ダイアログプロシージャ
 LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
@@ -522,6 +529,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			ShowWindow( g_hDlgSelectChara, TRUE );
 			ShowWindow( g_hDlgExtra, TRUE );
 			ShowWindow( g_hDlgQuickView, TRUE );
+			ShowWindow(g_hDlgMiniMap, TRUE);
 		} else if( wParam == SIZE_MINIMIZED ){
 			ShowWindow( g_hDlgSelectObject, FALSE );
 			ShowWindow( g_hDlgSelectMap, FALSE );
@@ -530,6 +538,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			ShowWindow( g_hDlgSelectChara, FALSE );
 			ShowWindow( g_hDlgExtra, FALSE );
 			ShowWindow( g_hDlgQuickView, FALSE );
+			ShowWindow(g_hDlgMiniMap, FALSE);
 		}
 		break;
 	}
@@ -706,6 +715,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			mapObject[y /40 +mapYtop][x /40 +mapXtop] = 0;
 		}
 		InvalidateRect( hWnd, NULL, FALSE );
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_VSCROLL:
@@ -1246,6 +1256,7 @@ BOOL LoadBitmap()
 	if( g_hmDC == NULL ){
 		g_hmDC = CreateCompatibleDC( hDC );
 		g_hmDCHalf = CreateCompatibleDC( hDC );
+		g_hmDCMini = CreateCompatibleDC(hDC);
 		g_hmDCAnd = CreateCompatibleDC( hDC );
 		g_hmDCOr = CreateCompatibleDC( hDC );
 		
@@ -1291,6 +1302,14 @@ BOOL LoadBitmap()
 	SelectObject( g_hmDCHalf, g_hBitmapHalf );
 	//１／２サイズのＣＧを描画$$
 	StretchBlt( g_hmDCHalf, 0, 0, 200, (g_iLoadCGHeight /2), g_hmDC, 0, 0, 400, g_iLoadCGHeight, SRCCOPY );
+
+	// ミニマップサイズのCG領域確保
+	if (g_hBitmapMini != NULL) {
+		DeleteObject(g_hBitmapMini);
+	}
+	g_hBitmapMini = CreateCompatibleBitmap(hDC, 100, (g_iLoadCGHeight / 4));
+	SelectObject(g_hmDCMini, g_hBitmapMini);
+	StretchBlt(g_hmDCMini, 0, 0, 100, (g_iLoadCGHeight / 4), g_hmDC, 0, 0, 400, g_iLoadCGHeight, SRCCOPY);
 
 	//AND画像領域確保
 	if( g_hBitmapAnd != NULL ) DeleteObject( g_hBitmapAnd );
@@ -1438,18 +1457,44 @@ void PaintStatus( BOOL flag )
 //##------------------------------------------------------------------
 // ミニマップ描画
 
-void PaintMiniMap(HDC hDC)
+void PaintMiniMap(HWND hWnd)
 {
 	int i, j, mdata;
+	HDC hDC;
+	PAINTSTRUCT ps;
+	HPEN screenPen, currentPen;
 
-	for (j = 0; j < g_iMapSize; ++j) {
-		for (i = 0; i < g_iMapSize; ++i) {
-			//背景描画
-			mdata = map[j][i];
-			BitBlt(hDC, i * 10, j * 10, 10, 10, g_hmDC, mapAttribute[mdata][ATR_X] + 15, mapAttribute[mdata][ATR_Y] + 15, SRCCOPY);
+	hDC = BeginPaint(hWnd, &ps);
+
+	for (j = 0; j < miniMapHeight; ++j) {
+		for (i = 0; i < miniMapWidth; ++i) {
+			// 背景描画
+			mdata = map[j + miniMapYtop][i + miniMapXtop];
+			BitBlt(hDC, i * 10, j * 10, 10, 10, g_hmDCMini, mapAttribute[mdata][ATR_X] / 4, mapAttribute[mdata][ATR_Y] / 4, SRCCOPY);
 		}
 	}
 
+	// 画面境界線描画
+	screenPen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
+	currentPen = CreatePen(PS_SOLID, 0, RGB(0, 0, 255));
+	SelectObject(hDC, screenPen);
+
+	int screenLinePos;
+	for (i = 0; i < miniMapWidth; ++i) {
+		if ((i + miniMapXtop) % 10 == 0) {
+			screenLinePos = i * 10 + 5;
+			DrawLine(hDC, screenLinePos, 0, screenLinePos, miniMapHeight * 10);
+		}
+	}
+	for (i = 0; i < miniMapHeight; ++i) {
+		if ((i + miniMapYtop) % 10 == 0) {
+			screenLinePos = i * 10 + 5;
+			DrawLine(hDC, 0, screenLinePos, miniMapWidth * 10, screenLinePos);
+		}
+	}
+
+	DeleteObject(screenPen);
+	EndPaint(hWnd, &ps);
 }
 
 
@@ -1621,6 +1666,8 @@ BOOL LoadMapData( char *FileName )
 	//スクロールバー設定
 	SetScrollRange( g_hWnd, SB_VERT, 0, (g_iMapSize -11), FALSE );
 	SetScrollRange( g_hWnd, SB_HORZ, 0, (g_iMapSize -11), FALSE );
+	SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, g_iMapSize - miniMapHeight, FALSE);
+	SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, g_iMapSize - miniMapWidth, FALSE);
 
 	//パーツ最大数設定
 	g_iMapPartsMax = ((iDataMapCount -1) /50) *50 +50;
@@ -3613,6 +3660,8 @@ LRESULT CALLBACK DialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			//スクロールバー設定
 			SetScrollRange( g_hWnd, SB_VERT, 0, (g_iMapSize -11), FALSE );
 			SetScrollRange( g_hWnd, SB_HORZ, 0, (g_iMapSize -11), FALSE );
+			SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, (g_iMapSize - miniMapHeight), FALSE);
+			SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, (g_iMapSize - miniMapWidth), FALSE);
 		}
 		//背景パーツ最大数拡張
 		else if( LOWORD(wParam) == IDC_BUTTON_MAP_PARTS ){
@@ -3690,10 +3739,70 @@ LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPA
 LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
+
+	case WM_INITDIALOG:
+		SetScrollRange(hWnd, SB_VERT, 0, g_iMapSize - miniMapHeight, FALSE);
+		SetScrollRange(hWnd, SB_HORZ, 0, g_iMapSize - miniMapWidth, FALSE);
+		break;
+
+	case WM_HSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (miniMapXtop < (g_iMapSize - miniMapWidth * 2)) ++miniMapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (miniMapXtop > 0) --miniMapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			miniMapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			miniMapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (miniMapXtop <= (g_iMapSize - miniMapWidth * 2) - 5) miniMapXtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (miniMapXtop >= 5) miniMapXtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
+	case WM_VSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (miniMapYtop < (g_iMapSize - miniMapHeight * 2)) ++miniMapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (miniMapYtop > 0) --miniMapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			miniMapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			miniMapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (miniMapYtop <= (g_iMapSize - miniMapHeight * 2) - 5) miniMapYtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (miniMapYtop >= 5) miniMapYtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
 	case WM_PAINT:
-		HDC hDC;
-		hDC = GetDC(hWnd);
-		PaintMiniMap(hDC);
+		PaintMiniMap(hWnd);
 		break;
 	}
 	return 0;
