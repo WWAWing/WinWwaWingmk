@@ -176,7 +176,6 @@ int g_iLoadCGHeight = 800;
 CDib	*g_pDib;
 HINSTANCE	g_hInst;
 HWND 	g_hWnd;
-//HWND 	g_hWndHide;
 HWND	g_hDlgObject = NULL;
 HWND	g_hDlgMap = NULL;
 HWND	g_hDlgSelectChara = NULL;
@@ -184,8 +183,6 @@ HWND	g_hDlgExtra = NULL;
 HWND	g_hDlgSelectObject = NULL;
 HWND	g_hDlgSelectMap = NULL;
 HWND	g_hDlgFoundation = NULL;
-HWND	g_hDlgFile;
-HWND	g_hDlgFileSave;
 HWND	g_hDlgCalculate = NULL;
 HWND	g_hDlgQuickView = NULL;
 HWND	g_hDlgBasicMes = NULL;
@@ -1088,44 +1085,33 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 			return FALSE;
 	}
 
-	//設定ファイル読み込み
+	// 設定ファイル読み込み
 	PositionX = GetPrivateProfileInt("Main", "PositionX", CW_USEDEFAULT, g_szSettingFile);
 	PositionY = GetPrivateProfileInt("Main", "PositionY", 0, g_szSettingFile);
-	//g_szSelectDir = GetPrivateProfileString("Main", "SelectDir", "mapdata", buf, 250, g_szSettingFile);
-	//g_szSelectFile = GetPrivateProfileString("Main", "SelectFile", "wwamap.dat", buf, 250, g_szSettingFile);
 
-	//メインウィンドウ作成
+	// メインウィンドウ作成
 	g_hWnd = CreateWindow( "WWAMK","ＷＷＡマップ作成ツール",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_HSCROLL | WS_VSCROLL,
 		PositionX, PositionY,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		NULL, NULL, hInst, NULL);
 
-	//サイズ変更
+	// サイズ変更
 	GetWindowRect(g_hWnd, &WindowRect);
 	GetClientRect(g_hWnd, &ClientRect);
 	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + 440;
 	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + 460;
 	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
 
-	/*
-	//サイズ調整用ダミーウィンドウ作成
-	g_hWndHide = CreateWindow("WWAMK", "DummyWindow",
-	WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL,
-	CW_USEDEFAULT, CW_USEDEFAULT,
-	CW_USEDEFAULT, CW_USEDEFAULT,
-	NULL, NULL, hInst, NULL);
-	*/
-
 	if ( g_hWnd != NULL ){
 		ShowWindow( g_hWnd,CmdShow );
 		UpdateWindow( g_hWnd );
 	}
 
-	//初期ファイル名設定
+	// 初期ファイル名設定
 	unsigned int i, j;
 	if( strlen(pszCmdLine) > 0 ){
-		//ダブルクォーテーションは削除
+		// ダブルクォーテーションは削除
 		for( i = 0 ; i < strlen(pszCmdLine) ; ++i ){
 			if( pszCmdLine[i] == '"' ){
 				++i;
@@ -1137,26 +1123,26 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 				break;
 			}
 		}
-		//ファイル名抽出
+		// ファイル名抽出
 		for( i = strlen(pszCmdLine) ; i > 0 ; --i ) if( pszCmdLine[i] == '\\' ) break;
 		strcpy( g_szSelectFile, (pszCmdLine +i+1) );
-		//ディレクトリ移動
+		// ディレクトリ移動
 		strcpy( g_szSelectDir, pszCmdLine );
 		g_szSelectDir[i+1] = '\0';
 		SetCurrentDirectory( g_szSelectDir );
 	} else {
 		SetCurrentDirectory( "mapdata" );
 	}
-	//マップデータ読み込み
+	// マップデータ読み込み
 	LoadMapData( g_szSelectFile );
 	if( g_bErrorPassword == TRUE ) MessageBox( g_hWnd, "暗証番号が違います。", "警告！", MB_OK );
-	//ビットマップ読み込み
+	// ビットマップ読み込み
 	LoadBitmap();
 
-	//ダイアログ表示
+	// ダイアログ表示
 	g_hDlgSelectObject = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc );
 	g_hDlgSelectMap = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc );
-	//ダイアログ移動
+	// ダイアログ移動
 	RECT rect;
 	RECT rectBox;
 	GetWindowRect( g_hWnd, &rectBox );
@@ -1168,41 +1154,39 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	ShowWindow( g_hDlgSelectMap, SW_SHOW );
 	ShowWindow( g_hDlgSelectObject, SW_SHOW );
 
-	//クイックビュー
+	// クイックビュー
 	g_hDlgQuickView = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc );
 	GetWindowRect( g_hWnd, &rectBox );
 	GetWindowRect( g_hDlgQuickView, &rect );
 	MoveWindow( g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgQuickView, SW_SHOW );
 
-	//画面色数取得
+	// 画面色数取得
 	HDC hDC = GetDC( g_hWnd );
 	if( GetDeviceCaps(hDC,BITSPIXEL) == 8 ){
 		MessageBox( g_hWnd, "このツールは、256色環境では画像がうまく表示されません。\nコントロールパネルの画面の設定で、16ビットカラー以上を選択してください。", "警告！", MB_OK );
 	}
 	ReleaseDC( g_hWnd, hDC );
 
-	//フォーカス移動
+	// フォーカス移動
 	SetFocus( g_hWnd );
-	//アクセラレーターキー
+	// アクセラレーターキー
 	HACCEL hAccel = LoadAccelerators( g_hInst, MAKEINTRESOURCE(IDR_MENU1) );
 
-	//初期化完了
+	// 初期化完了
 	g_bInitial = TRUE;
 
 	if ( g_hWnd != NULL ){
 		while( GetMessage(&msg,NULL,0,0) ){
-			//ダイアログメッセージ
-			if( IsDialogMessage( g_hDlgFile, &msg ) ) continue;
-			else if( IsDialogMessage( g_hDlgFileSave, &msg ) ) continue;
-			else if( IsDialogMessage( g_hDlgBasicMes, &msg ) ) continue;
-			//テキストボックス以外ならショートカットキー許可
+			// ダイアログメッセージ
+			if( IsDialogMessage( g_hDlgBasicMes, &msg ) ) continue;
+			// テキストボックス以外ならショートカットキー許可
 			if( (GetDlgCtrlID(GetFocus()) == IDC_EDIT_MESSAGE) || (GetDlgCtrlID(GetFocus()) == IDC_EDIT_URL) ){
 				if( IsDialogMessage( g_hDlgMap, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgObject, &msg ) ) continue;
 			}
 			if( !TranslateAccelerator(g_hWnd,hAccel,&msg) ){
-				//ダイアログメッセージ
+				// ダイアログメッセージ
 				if( IsDialogMessage( g_hDlgSelectMap, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgSelectObject, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgQuickView, &msg ) ) continue;
@@ -1212,7 +1196,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 				else if( IsDialogMessage( g_hDlgObject, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgMap, &msg ) ) continue;
 				
-				//メッセージを送る
+				// メッセージを送る
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
@@ -1231,7 +1215,7 @@ BOOL LoadBitmap()
 	g_pDib = new CDib;
 	HDC hDC = GetDC( g_hWnd );
 
-	//デバイスコンテキストの初期化
+	// デバイスコンテキストの初期化
 	if( g_hmDC == NULL ){
 		g_hmDC = CreateCompatibleDC( hDC );
 		g_hmDCHalf = CreateCompatibleDC( hDC );
@@ -1242,68 +1226,68 @@ BOOL LoadBitmap()
 		g_hBitmapExtra = CreateCompatibleBitmap( hDC, 440, 20 );
 		SelectObject( g_hmDCExtra,g_hBitmapExtra );
 	}
-	//現在のビットマップ名記録
+	// 現在のビットマップ名記録
 	if( g_bLoadGif == TRUE ) strcpy( g_mapcgOld, g_mapcgName );
 	else strcpy( g_mapcgOld, g_mapcgNameBmp );
 
-	//読み出し中ダイアログ表示
+	// 読み出し中ダイアログ表示
 	Rectangle( hDC, 0, 0, 440 ,440 );
 	TextOut( hDC, 80, 200, "画像データ読み込み中・・・・・", 30 );
 
-	//画像メモリにGIF描画
+	// 画像メモリにGIF描画
 	g_bLoadGif = ReadGifImage();
 	if( g_bFileNotFound == TRUE ) return FALSE;
-	//GIF読み込み失敗時
+	// GIF読み込み失敗時
 	if( g_bLoadGif == FALSE ){
 		strcpy( g_mapcgOld, g_mapcgNameBmp );
 		if( g_pDib->ReadFile(g_mapcgNameBmp) == FALSE ){
 			MessageBox( g_hWnd, "このマップデータに対応する画像ファイル（256色BMPファイル）が読み込めません。\n「編集－基本設定の編集」で256色BMPファイルを指定してください。\n\nこのシステムでは、GIFファイルは直接読み込めないので、\n編集用に256色BMPファイルが必要になります。", "BMPファイル読み込み失敗", MB_OK );
-			//デバイス解放
+			// デバイス解放
 			ReleaseDC( g_hWnd, hDC );
 			return FALSE;
 		}
-		//画像丈設定
+		// 画像丈設定
 		g_iLoadCGHeight = g_pDib->GetCDibBiHeight();
 		if( (g_iLoadCGHeight /40) > 17 ) g_ScrCGCharaMax = (g_iLoadCGHeight /40) -17;
 		else g_ScrCGCharaMax = 0;
-		//クライアント領域確保
+		// クライアント領域確保
 		if( g_hBitmap != NULL ) DeleteObject( g_hBitmap );
 		g_hBitmap = CreateCompatibleBitmap( hDC, 400, g_iLoadCGHeight );
 		SelectObject( g_hmDC, g_hBitmap );
-		//クライアントに描画
+		// クライアントに描画
 		g_pDib->DrawBits( g_hmDC, 0, 0 );
 	}
 
-	//１／２サイズのＣＧ領域確保
+	// １／２サイズのＣＧ領域確保
 	if( g_hBitmapHalf != NULL ) DeleteObject( g_hBitmapHalf );
 	g_hBitmapHalf = CreateCompatibleBitmap( hDC, 200, (g_iLoadCGHeight /2) );
 	SelectObject( g_hmDCHalf, g_hBitmapHalf );
-	//１／２サイズのＣＧを描画$$
+	// １／２サイズのＣＧを描画$$
 	StretchBlt( g_hmDCHalf, 0, 0, 200, (g_iLoadCGHeight /2), g_hmDC, 0, 0, 400, g_iLoadCGHeight, SRCCOPY );
 
-	//AND画像領域確保
+	// AND画像領域確保
 	if( g_hBitmapAnd != NULL ) DeleteObject( g_hBitmapAnd );
 	g_hBitmapAnd = CreateBitmap( 400, g_iLoadCGHeight, 1, 1, NULL );
 	SelectObject( g_hmDCAnd, g_hBitmapAnd );
-	//AND画像作成
+	// AND画像作成
 	if( g_iColorTp == 0 ) g_iColorTp = GetPixel( g_hmDC, 60, 20 );
 	SetBkColor( g_hmDC, g_iColorTp );
 	BitBlt( g_hmDCAnd, 0, 0, 400, g_iLoadCGHeight, g_hmDC, 0, 0, SRCCOPY );
-	//AND画像反転
+	// AND画像反転
 	BitBlt( g_hmDCAnd, 0, 0, 400, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT );
-	//OR画像領域確保
+	// OR画像領域確保
 	if( g_hBitmapOr != NULL ) DeleteObject( g_hBitmapOr );
 	g_hBitmapOr = CreateCompatibleBitmap( hDC, 400, g_iLoadCGHeight );
 	SelectObject( g_hmDCOr, g_hBitmapOr );
-	//OR画像作成
+	// OR画像作成
 	BitBlt( g_hmDCOr, 0, 0, 400, g_iLoadCGHeight, g_hmDC, 0, 0, SRCCOPY );
 	BitBlt( g_hmDCOr, 0, 0, 400, g_iLoadCGHeight, g_hmDCAnd, 0, 0, SRCAND );
-	//AND画像反転
+	// AND画像反転
 	BitBlt( g_hmDCAnd, 0, 0, 400, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT );
 
-	//デバイス解放
+	// デバイス解放
 	ReleaseDC( g_hWnd,hDC );
-	//再描画
+	// 再描画
 	InvalidateRect( g_hWnd, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
@@ -1326,17 +1310,17 @@ void PaintWindow()
 	hDC = BeginPaint( g_hWnd,&ps );
 	paintMapAll( hDC );
 	
-	//キャラクタ境界線表示
+	// キャラクタ境界線表示
 	hpen = CreatePen( PS_SOLID,0,RGB(0,0,255) );
 	hpenOld = (HPEN)SelectObject( hDC, hpen );
 	hpenRed = CreatePen( PS_SOLID,0,RGB(255,0,0) );
 	
-	//境界線非表示
+	// 境界線非表示
 	if( g_MapLineFlag == TRUE ){
 		for( x = 1 ; x < 11 ; ++x ) DrawLine( hDC, x*40, YTOP, x*40, 440 +YTOP );
 		for( y = 1 ; y < 11 ; ++y ) DrawLine( hDC, 0, y*40 +YTOP, 440, y*40 +YTOP );
 		
-		//マップ境界線表示
+		// マップ境界線表示
 		SelectObject( hDC,hpenRed );
 		DrawLine( hDC, (11-mapXtop%10)*40-20, YTOP, (11-mapXtop%10)*40-20, 440 +YTOP );
 		DrawLine( hDC, (11-mapXtop%10)*40-19, YTOP, (11-mapXtop%10)*40-19, 440 +YTOP );
@@ -1348,7 +1332,7 @@ void PaintWindow()
 		DrawLine( hDC, 0, (11-mapYtop%10)*40-419 +YTOP, 440, (11-mapYtop%10)*40-419 +YTOP );
 	}
 	
-	//ドラッグによる四角描画
+	// ドラッグによる四角描画
 	SelectObject( hDC,hpenRed );
 	if( g_MouseDrag == TRUE ){
 		x = g_MouseX /40;
@@ -1364,13 +1348,13 @@ void PaintWindow()
 		DrawRect2( hDC, x *40 -2, y *40 -2 +YTOP, x2 *40 +2, y2 *40 +2 +YTOP );
 	}
 	
-	//ペンの解放
+	// ペンの解放
 	SelectObject( hDC,hpenOld );
 	DeleteObject( hpen );
 	DeleteObject( hpenRed );
 	EndPaint( g_hWnd,&ps );
 	
-	//ステータス描画
+	// ステータス描画
 	PaintStatus( TRUE );
 }
 
@@ -1393,7 +1377,7 @@ void PaintStatusSub( int x, int y, int iMode, char *szStr )
 
 void PaintStatus( BOOL flag )
 {
-	//ステータス非表示
+	// ステータス非表示
 	HDC hDC = GetDC( g_hWnd );
 	char str[100];
 	int x;
@@ -1467,7 +1451,7 @@ void loadMapString( char *AnsiString, BOOL GetString = TRUE )
 	DWORD chaLength = WideCharToMultiByte( CP_ACP, 0, buffer, -1, NULL, 0, NULL, NULL );
 	WideCharToMultiByte( CP_ACP, 0, buffer, -1, AnsiString, chaLength, NULL, NULL );
 
-	//改行文字の検出と変換
+	// 改行文字の検出と変換
 	for( length = 0 ; length < MESSAGE_STR_MAX ; ++length ){
 		if( AnsiString[length] == NULL ) break;
 		if( (AnsiString[length] == '#') && (AnsiString[length+1] == '#') ){
@@ -1495,22 +1479,22 @@ BOOL LoadMapData( char *FileName )
 	int dataChara, dataMode;
 	char szTemp[100];
 
-	//ダイアログ閉じる
+	// ダイアログ閉じる
 	DestroyWindow( g_hDlgObject );
 	DestroyWindow( g_hDlgMap );
 	DestroyWindow( g_hDlgSelectChara );
 
-	//データオープン
+	// データオープン
 	hFile = CreateFile( FileName,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,0,0 );
 	if( hFile == INVALID_HANDLE_VALUE ){
 		MessageBox( g_hWnd, "マップデータファイルが読み込みできません。", "注意", MB_OK );
 		return FALSE;
 	}
-	//データ読み込み
+	// データ読み込み
 	ReadFile( hFile,LPVOID(&PressData),sizeof(PressData),&BytesRead,0 );
 	CloseHandle( hFile );
 
-	//データ解凍
+	// データ解凍
 	int i, j;
 	int x, y;
 	int data;
@@ -1562,7 +1546,7 @@ BOOL LoadMapData( char *FileName )
 		iDataObjectCount = unsignedByte( g_MapData[DATA_OBJECT_COUNT] ) + unsignedByte( g_MapData[DATA_OBJECT_COUNT +1] ) * 0x100;
 	}
 
-	//基本設定
+	// 基本設定
 	statusEnergyMax = unsignedByte( g_MapData[DATA_STATUS_ENERGYMAX] ) + unsignedByte( g_MapData[DATA_STATUS_ENERGYMAX+1] ) * 0x100;
 	statusEnergy = unsignedByte( g_MapData[DATA_STATUS_ENERGY] ) + unsignedByte( g_MapData[DATA_STATUS_ENERGY+1] ) * 0x100;
 	statusStrength = unsignedByte( g_MapData[DATA_STATUS_STRENGTH] ) + unsignedByte( g_MapData[DATA_STATUS_STRENGTH+1] ) * 0x100;
@@ -1575,11 +1559,11 @@ BOOL LoadMapData( char *FileName )
 		itemBox[i] = unsignedByte( g_MapData[DATA_ITEM +i] );
 	}
 
-	//マップデータ
+	// マップデータ
 	pointer = 100;
-	//下位バージョンからの読み込みプロテクト
+	// 下位バージョンからの読み込みプロテクト
 	if( g_MapData[DATA_VERSION] >= 29 ) pointer = 90;
-	//旧バージョン用にコンバート
+	// 旧バージョン用にコンバート
 	int MapWidth = g_iMapSize;
 	if( g_MapData[DATA_VERSION] < 28 ){
 		MapWidth = 71;
@@ -1588,16 +1572,16 @@ BOOL LoadMapData( char *FileName )
 		MapWidth = 101;
 		g_iMapSize = 101;
 	}
-	//スクロールバー設定
+	// スクロールバー設定
 	SetScrollRange( g_hWnd, SB_VERT, 0, (g_iMapSize -11), FALSE );
 	SetScrollRange( g_hWnd, SB_HORZ, 0, (g_iMapSize -11), FALSE );
 
-	//パーツ最大数設定
+	// パーツ最大数設定
 	g_iMapPartsMax = ((iDataMapCount -1) /50) *50 +50;
 	if( g_iMapPartsMax < 200 ) g_iMapPartsMax = 200;
 	g_iObjectPartsMax = ((iDataObjectCount -1) /50) *50 +50;
 	if( g_iObjectPartsMax < 200 ) g_iObjectPartsMax = 200;
-	//スクロールバー設定
+	// スクロールバー設定
 	SetScrollRange( g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax /10) -3), FALSE );
 	SetScrollRange( g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax /10) -3), FALSE );
 
@@ -3017,10 +3001,12 @@ void DisplayMapDialog()
 
 	//ダイアログの作成
 	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditMapDialogProc );
+
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgMap, IDC_COMBO_MAP );
 	for( i = 0 ; i < 4 ; ++i ) SendMessage( hwndCombo, CB_ADDSTRING, 0, (LPARAM)MAP[i].Name );
 	SendMessage( hwndCombo, CB_SETCURSEL, position, 0 );
+
 	//メッセージボックスにテキスト挿入
 	if( (type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK) ){
 		SetDlgItemText( g_hDlgMap, IDC_EDIT_MESSAGE, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]] );
@@ -3498,20 +3484,6 @@ LRESULT CALLBACK DialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 				InvalidateRect( g_hWnd, NULL, FALSE );
 				g_bUpdate = TRUE;
 			}
-			//マップデータ読み込み
-			else if( hWnd == g_hDlgFile ){
-				GetDlgItemText( hWnd, IDC_COMBO_FILE, g_szSelectFile, sizeof(g_szSelectFile) );
-				DestroyWindow( hWnd );
-				LoadMapData( g_szSelectFile );
-				if( g_bErrorPassword == TRUE ) MessageBox( g_hWnd, "暗証番号が違います。", "警告！", MB_OK );
-				LoadBitmap();
-			}
-			//マップデータの保存
-			else if( hWnd == g_hDlgFileSave ){
-				GetDlgItemText( hWnd, IDC_COMBO_FILE, g_szSelectFile, sizeof(g_szSelectFile) );
-				DestroyWindow( hWnd );
-				SaveMapData( g_szSelectFile );
-			}
 			//戦闘結果の計算
 			else if( hWnd == g_hDlgCalculate ){
 				char str[50];
@@ -3912,20 +3884,21 @@ void EditMapFoundation()
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_GVX, str );
 	_itoa( gameoverYp, str, 10 );
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_GVY, str );
+
 	//テキストデータ挿入
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_WORLDNAME, g_worldName );
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_PASSWORD, g_worldPassword );
+
 	//コンボボックスにデータ挿入
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp );
-	//DlgDirListComboBox( g_hDlgFoundation, "*.bmp", IDC_COMBO_BMP, IDC_STATIC_FILE, 0 );
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp );
 	if( g_bLoadGif == TRUE ){
 		ShowWindow( GetDlgItem(g_hDlgFoundation,IDC_COMBO_BMP), FALSE );
 		ShowWindow( GetDlgItem(g_hDlgFoundation,IDC_STATIC_BMP), FALSE );
 	}
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName );
-	//DlgDirListComboBox( g_hDlgFoundation, "*.gif", IDC_COMBO_GIF, IDC_STATIC_FILE, 0 );
 	SetDlgItemText( g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName );
+
 	//各種サイズデータ挿入
 	sprintf( str, "%d×%d", g_iMapSize, g_iMapSize );
 	SetDlgItemText( g_hDlgFoundation, IDC_EDIT_MAPSIZE, str );
