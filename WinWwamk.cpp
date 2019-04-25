@@ -504,18 +504,22 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if( mapYtop < (g_iMapSize -11) ) ++mapYtop;
 			SetScrollPos( g_hWnd, SB_VERT, mapYtop, 1 );
 			InvalidateRect( hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		} else if( LOWORD(wParam) == VK_UP ){
 			if( mapYtop > 0 ) --mapYtop;
 			SetScrollPos( g_hWnd, SB_VERT, mapYtop, 1 );
 			InvalidateRect( hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		} else if( LOWORD(wParam) == VK_RIGHT ){
 			if( mapXtop < (g_iMapSize -11) ) ++mapXtop;
 			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
 			InvalidateRect( hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		} else if( LOWORD(wParam) == VK_LEFT ){
 			if( mapXtop > 0 ) --mapXtop;
 			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
 			InvalidateRect( hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 	}
@@ -1463,6 +1467,7 @@ void PaintMiniMap(HWND hWnd)
 	HDC hDC;
 	PAINTSTRUCT ps;
 	HPEN screenPen, currentPen;
+	HGDIOBJ currentBrush;
 
 	hDC = BeginPaint(hWnd, &ps);
 
@@ -1475,8 +1480,10 @@ void PaintMiniMap(HWND hWnd)
 	}
 
 	// âÊñ ã´äEê¸ï`âÊ
-	screenPen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
-	currentPen = CreatePen(PS_SOLID, 0, RGB(0, 0, 255));
+	screenPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
+	currentPen = CreatePen(PS_INSIDEFRAME, 1, RGB(255, 0, 0));
+	currentBrush = GetStockObject(NULL_BRUSH);
+
 	SelectObject(hDC, screenPen);
 
 	int screenLinePos;
@@ -1492,8 +1499,18 @@ void PaintMiniMap(HWND hWnd)
 			DrawLine(hDC, 0, screenLinePos, miniMapWidth * 10, screenLinePos);
 		}
 	}
-
 	DeleteObject(screenPen);
+
+	SelectObject(hDC, currentPen);
+	SelectObject(hDC, currentBrush);
+	{
+		const int currentX = (mapXtop - miniMapXtop) * 10;
+		const int currentY = (mapYtop - miniMapYtop) * 10;
+		Rectangle(hDC, currentX, currentY, currentX + 109, currentY + 109);
+	}
+	DeleteObject(currentPen);
+	DeleteObject(currentBrush);
+
 	EndPaint(hWnd, &ps);
 }
 
