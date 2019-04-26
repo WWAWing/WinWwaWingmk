@@ -209,6 +209,9 @@ HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
 HBITMAP	g_hBitmapExtra = NULL;
 
+TRACKMOUSEEVENT g_MapEditTracking;
+TRACKMOUSEEVENT g_MiniMapTracking;
+
 int g_AtrSelectChara;	//ＣＧ選択用
 int g_EditMode;
 
@@ -218,6 +221,7 @@ BOOL g_bRestoreMapDialog = FALSE;
 BOOL g_MapLineFlag = TRUE;      //境界線
 BOOL g_ObjectNumberFlag = TRUE; //物体パーツ番号表示
 BOOL g_MouseDrag = FALSE;	    //マウスのドラッグ判定用
+BOOL g_MapJumping = FALSE;      //ミニマップのマウスドラッグ判定用
 BOOL g_bLoadGif = TRUE;		    //GIFファイルが読み込めるか？
 BOOL g_bUpdate = FALSE;		    //更新確認フラグ
 BOOL g_bInitial = FALSE;	    //初期化済みか？
@@ -433,6 +437,8 @@ LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPA
 // ミニマップダイアログプロシージャ
 LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+void JumpMapFromMiniMap(HWND hWnd, int x, int y);
+
 // 線と四角の描画
 void DrawLine( HDC hDC, int x, int y, int x2, int y2 );
 void DrawRect( HDC hDC, int x, int y, int x2, int y2 );
@@ -597,6 +603,11 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		break;
 
+	case WM_MOUSELEAVE:
+		g_MouseDrag = FALSE;
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+
 	case WM_LBUTTONUP:
 		if( g_MouseDrag == FALSE ) break;
 		g_MouseDrag = FALSE;
@@ -654,7 +665,10 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			//ドラッグ開始位置セット
 			g_MouseDragX = x;
 			g_MouseDragY = y;
-			if( (g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4) ) g_MouseDrag = TRUE;
+			if ((g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4)) {
+				g_MouseDrag = TRUE;
+				TrackMouseEvent(&g_MapEditTracking);
+			}
 		}
 		//ステータスバークリック
 		if( y < 0 ){
@@ -743,6 +757,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			SetScrollPos( g_hWnd, SB_VERT, mapYtop, 1 );
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_MOUSEWHEEL:
@@ -766,6 +781,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			}
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_HSCROLL:
@@ -789,6 +805,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			SetScrollPos( g_hWnd, SB_HORZ, mapXtop, 1 );
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_PAINT:
@@ -1207,6 +1224,13 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	}
 	ReleaseDC( g_hWnd, hDC );
 
+	//マウストラック設定
+	g_MapEditTracking = {
+		sizeof(TRACKMOUSEEVENT),
+		TME_LEAVE,
+		g_hWnd
+	};
+
 	//フォーカス移動
 	SetFocus( g_hWnd );
 	//アクセラレーターキー
@@ -1480,8 +1504,8 @@ void PaintMiniMap(HWND hWnd)
 	}
 
 	// 画面境界線描画
-	screenPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
-	currentPen = CreatePen(PS_INSIDEFRAME, 1, RGB(255, 0, 0));
+	screenPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+	currentPen = CreatePen(PS_INSIDEFRAME, 2, RGB(255, 0, 0));
 	currentBrush = GetStockObject(NULL_BRUSH);
 
 	SelectObject(hDC, screenPen);
@@ -3752,7 +3776,6 @@ LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPA
 
 //##------------------------------------------------------------------
 // ミニマップダイアログプロシージャ
-
 LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
@@ -3760,11 +3783,40 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	case WM_INITDIALOG:
 		SetScrollRange(hWnd, SB_VERT, 0, g_iMapSize - miniMapHeight, FALSE);
 		SetScrollRange(hWnd, SB_HORZ, 0, g_iMapSize - miniMapWidth, FALSE);
+		g_MiniMapTracking = {
+			sizeof(TRACKMOUSEEVENT),
+			TME_LEAVE,
+			hWnd
+		};
+		break;
+
+	case WM_LBUTTONDOWN: {
+		g_MapJumping = TRUE;
+		TrackMouseEvent(&g_MiniMapTracking);
+
+		JumpMapFromMiniMap(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+	}
+
+	case WM_MOUSEMOVE: {
+		if (g_MapJumping == FALSE) {
+			break;
+		}
+
+		const int x = GET_X_LPARAM(lParam);
+		const int y = GET_Y_LPARAM(lParam);
+		JumpMapFromMiniMap(hWnd, x, y);
+		break;
+	}
+	
+	case WM_MOUSELEAVE:
+	case WM_LBUTTONUP:
+		g_MapJumping = FALSE;
 		break;
 
 	case WM_HSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (miniMapXtop < (g_iMapSize - miniMapWidth * 2)) ++miniMapXtop;
+			if (miniMapXtop < g_iMapSize - miniMapWidth) ++miniMapXtop;
 			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -3780,7 +3832,7 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (miniMapXtop <= (g_iMapSize - miniMapWidth * 2) - 5) miniMapXtop += 5;
+			if (miniMapXtop <= g_iMapSize - miniMapWidth - 5) miniMapXtop += 5;
 			SetScrollPos(g_hDlgMiniMap, SB_HORZ, miniMapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -3792,7 +3844,7 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 	case WM_VSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (miniMapYtop < (g_iMapSize - miniMapHeight * 2)) ++miniMapYtop;
+			if (miniMapYtop < g_iMapSize - miniMapHeight) ++miniMapYtop;
 			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -3808,7 +3860,7 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (miniMapYtop <= (g_iMapSize - miniMapHeight * 2) - 5) miniMapYtop += 5;
+			if (miniMapYtop <= g_iMapSize - miniMapHeight - 5) miniMapYtop += 5;
 			SetScrollPos(g_hDlgMiniMap, SB_VERT, miniMapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -3818,11 +3870,62 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
+	case WM_MOUSEWHEEL: {
+		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
+			const int x = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (x < 0) {
+				if (miniMapXtop < (g_iMapSize - miniMapWidth)) ++miniMapXtop;
+				SetScrollPos(hWnd, SB_HORZ, miniMapXtop, 1);
+			}
+			else if (x > 0) {
+				if (miniMapXtop > 0) --miniMapXtop;
+				SetScrollPos(hWnd, SB_HORZ, miniMapXtop, 1);
+			}
+		}
+		else {
+			const int y = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (y < 0) {
+				if (miniMapYtop < (g_iMapSize - miniMapHeight)) ++miniMapYtop;
+				SetScrollPos(hWnd, SB_VERT, miniMapYtop, 1);
+			}
+			else if (y > 0) {
+				if (miniMapYtop > 0) --miniMapYtop;
+				SetScrollPos(hWnd, SB_VERT, miniMapYtop, 1);
+			}
+		}
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
+
 	case WM_PAINT:
 		PaintMiniMap(hWnd);
 		break;
 	}
 	return 0;
+}
+
+// クリック座標からマップの位置を移動
+void JumpMapFromMiniMap(HWND hWnd, int mouseX, int mouseY) {
+	const int x = floor(mouseX / 10) + miniMapXtop;
+	const int y = floor(mouseY / 10) + miniMapYtop;
+
+	mapXtop = x - 5;
+	mapYtop = y - 5;
+	if (mapXtop < 0) {
+		mapXtop = 0;
+	}
+	else if (mapXtop + 11 > g_iMapSize) {
+		mapXtop = g_iMapSize - 11;
+	}
+	if (mapYtop < 0) {
+		mapYtop = 0;
+	}
+	else if (mapYtop + 11 > g_iMapSize) {
+		mapYtop = g_iMapSize - 11;
+	}
+
+	InvalidateRect(g_hWnd, NULL, FALSE);
+	InvalidateRect(hWnd, NULL, FALSE);
 }
 
 
