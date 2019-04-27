@@ -192,7 +192,6 @@ HWND	g_hDlgFoundation = NULL;
 HWND	g_hDlgFile;
 HWND	g_hDlgFileSave;
 HWND	g_hDlgCalculate = NULL;
-HWND	g_hDlgQuickView = NULL;
 HWND	g_hDlgBasicMes = NULL;
 HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
@@ -428,8 +427,6 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 // 編集ダイアログプロシージャ
 LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
-// クイックビューダイアログプロシージャ
-LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // キャラクタＣＧ選択ダイアログプロシージャ
 LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 基本メッセージダイアログプロシージャ
@@ -538,7 +535,6 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			ShowWindow( g_hDlgMap, TRUE );
 			ShowWindow( g_hDlgSelectChara, TRUE );
 			ShowWindow( g_hDlgExtra, TRUE );
-			ShowWindow( g_hDlgQuickView, TRUE );
 			ShowWindow(g_hDlgMiniMap, TRUE);
 		} else if( wParam == SIZE_MINIMIZED ){
 			ShowWindow( g_hDlgSelectObject, FALSE );
@@ -547,7 +543,6 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			ShowWindow( g_hDlgMap, FALSE );
 			ShowWindow( g_hDlgSelectChara, FALSE );
 			ShowWindow( g_hDlgExtra, FALSE );
-			ShowWindow( g_hDlgQuickView, FALSE );
 			ShowWindow(g_hDlgMiniMap, FALSE);
 		}
 		break;
@@ -585,7 +580,6 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			InvalidateRect( hWnd, NULL, FALSE );
 			InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
 			InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
-			InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		}
 		break;
 
@@ -977,11 +971,6 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if( g_bUpdate == TRUE ) MessageBox( g_hWnd, "現在の状態のマップを見る場合は、\n一度ファイルに保存しておいてください。", "注意！", MB_OK );
 			ExecBrowser();
 		}
-		//クイックビューウィンドウの表示
-		else if( LOWORD(wParam) == ID_MENU_QVIEW ){
-			ShowWindow( g_hDlgQuickView, TRUE );
-			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_QVIEW, MF_GRAYED );
-		}
 		//物体選択ウィンドウの表示
 		else if( LOWORD(wParam) == ID_MENU_OBJWINDOW ){
 			ShowWindow( g_hDlgSelectObject, TRUE );
@@ -991,6 +980,11 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		else if( LOWORD(wParam) == ID_MENU_MAPWINDOW ){
 			ShowWindow( g_hDlgSelectMap, TRUE );
 			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED );
+		}
+		//ミニマップウインドウの表示
+		else if (LOWORD(wParam) == ID_MENU_MINIWINDOW) {
+			ShowWindow(g_hDlgMiniMap, TRUE);
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_GRAYED);
 		}
 		//パーツのコピー
 		else if( LOWORD(wParam) == ID_MENU_COPY ){
@@ -1204,15 +1198,9 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	ShowWindow( g_hDlgSelectMap, SW_SHOW );
 	ShowWindow( g_hDlgSelectObject, SW_SHOW );
 
-	//クイックビュー
-	g_hDlgQuickView = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc );
-	GetWindowRect( g_hWnd, &rectBox );
-	GetWindowRect( g_hDlgQuickView, &rect );
-	MoveWindow( g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
-	ShowWindow( g_hDlgQuickView, SW_SHOW );
-
 	//ミニマップ
 	g_hDlgMiniMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_MINIMAP), g_hWnd, (DLGPROC)MiniMapDialogProc);
+	GetWindowRect(g_hWnd, &rectBox);
 	GetWindowRect(g_hDlgMiniMap, &rect);
 	MoveWindow(g_hDlgMiniMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
 	ShowWindow(g_hDlgMiniMap, SW_SHOW);
@@ -1254,7 +1242,6 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 				//ダイアログメッセージ
 				if( IsDialogMessage( g_hDlgSelectMap, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgSelectObject, &msg ) ) continue;
-				else if( IsDialogMessage( g_hDlgQuickView, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgExtra, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgCalculate, &msg ) ) continue;
 				else if( IsDialogMessage( g_hDlgFoundation, &msg ) ) continue;
@@ -1881,16 +1868,15 @@ BOOL LoadMapData( char *FileName )
 		}
 		ShowWindow( g_hDlgSelectObject, FALSE );
 		ShowWindow( g_hDlgSelectMap, FALSE );
-		ShowWindow( g_hDlgQuickView, FALSE );
+		ShowWindow( g_hDlgMiniMap, FALSE );
 		//if( g_bInitial == FALSE ) LibLoad();
 		DialogBox( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PASSWORD), g_hWnd, (DLGPROC)DialogProcPassword );
 		ShowWindow( g_hDlgSelectObject, TRUE );
 		ShowWindow( g_hDlgSelectMap, TRUE );
-		ShowWindow( g_hDlgQuickView, TRUE );
+		ShowWindow( g_hDlgMiniMap, TRUE );
 	}
 	//Undoセット
 	SetUndoData();
-	InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 
 	//暗証番号判定
 	if( strcmp(g_worldPassword,g_szInputPassword) != 0 ){
@@ -2307,7 +2293,6 @@ LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam,
 		if( x < 400 ) g_SelectObjectX = x /40;
 		if( y < 40 * DIALOG_OBJECT_SELECT_LINE ) g_SelectObjectY = g_ScrObject +y /40;
 		InvalidateRect( hWnd, NULL, FALSE );
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		//現在選択中の物体を設定
 		g_SelectObjectData = g_SelectObjectX +g_SelectObjectY *10;
 		//編集モード変更
@@ -2436,7 +2421,6 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		if( x < 400 ) g_SelectMapX = x /40;
 		if( y < 40 * DIALOG_MAP_SELECT_LINE ) g_SelectMapY = g_ScrMap +y /40;
 		InvalidateRect( hWnd, NULL, FALSE );
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		//現在選択中の背景を設定
 		g_SelectMapData = g_SelectMapX +g_SelectMapY *10;
 		//編集モード変更
@@ -2629,7 +2613,6 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		}
 		g_bCancel = FALSE;
 		if( g_bRestoreObjectDialog == TRUE ) DisplayObjectDialog();
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		return 1;
 	}
 	}
@@ -2715,57 +2698,7 @@ LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		g_bCancel = FALSE;
 		if( g_bRestoreMapDialog == TRUE ) DisplayMapDialog();
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		return 1;
-	}
-	}
-	return 0;
-}
-
-
-
-//##------------------------------------------------------------------
-// クイックビューダイアログプロシージャ
-
-LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
-{
-	switch( message ){
-	case WM_PAINT: {
-		HDC hDC = GetDC( hWnd );
-		int type;
-		if( g_EditMode == 0 ){
-			BitBlt( hDC, 5, 4, 40, 40, g_hmDC, mapAttribute[g_SelectMapData][ATR_X], mapAttribute[g_SelectMapData][ATR_Y], SRCCOPY );
-			SetDlgItemText( g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]] );
-			//文字表示
-			char str[50];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf( str, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData );
-			TextOut( hDC,50,5,str,strlen(str) );
-			type = mapAttribute[g_SelectMapData][ATR_TYPE];
-			sprintf( str, "種類：%s ", g_MapName[type] );
-			TextOut( hDC,50,26,str,strlen(str) );
-		} else if( g_EditMode == 1 ){
-			BitBlt( hDC, 5, 4, 40, 40, g_hmDC, objectAttribute[g_SelectObjectData][ATR_X], objectAttribute[g_SelectObjectData][ATR_Y], SRCCOPY );
-			SetDlgItemText( g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]] );
-			//文字表示
-			char str[50];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf( str, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData );
-			TextOut( hDC,50,5,str,strlen(str) );
-			type = objectAttribute[g_SelectObjectData][ATR_TYPE];
-			sprintf( str, "種類：%s ", g_ObjectName[type] );
-			TextOut( hDC,50,26,str,strlen(str) );
-		}
-		ReleaseDC( hWnd, hDC );
-		break;
-	}
-	case WM_COMMAND: {
-		if( wParam == IDCANCEL ){
-			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_QVIEW, MF_ENABLED );
-			ShowWindow( hWnd, FALSE );
-			return 1;
-		}
-		break;
 	}
 	}
 	return 0;
@@ -3897,6 +3830,13 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		break;
 	}
 
+	case WM_COMMAND:
+		if (wParam == IDCANCEL) {
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_ENABLED);
+			ShowWindow(hWnd, FALSE);
+		}
+		break;
+
 	case WM_PAINT:
 		PaintMiniMap(hWnd);
 		break;
@@ -4150,7 +4090,6 @@ void MakeNewMap()
 	InvalidateRect( g_hWnd, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
 	InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
-	InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 
 	MessageBox( g_hWnd, "マップを新規作成しました。\n画面には何も表示されなくなりますがこれで正常です。\n使用するＧＩＦ画像ファイルを選択後、\n新たにパーツを作成してマップに配置していってください。", "マップの新規作成", MB_OK );
