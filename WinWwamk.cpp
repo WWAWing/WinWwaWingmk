@@ -194,12 +194,14 @@ HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
 HDC		g_hmDCMini = NULL;
+HDC		g_hmDCMiniMap = NULL;
 HDC		g_hmDCAnd = NULL;
 HDC		g_hmDCOr = NULL;
 HDC		g_hmDCExtra = NULL;
 HBITMAP	g_hBitmap = NULL;
 HBITMAP	g_hBitmapHalf = NULL;
 HBITMAP g_hBitmapMini = NULL;
+HBITMAP g_hBitmapMiniMap = NULL;
 HBITMAP	g_hBitmapGif = NULL;
 HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
@@ -415,6 +417,8 @@ void PaintWindow();
 void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
+// ミニマップ作成
+void CreateMiniMap();
 // ミニマップ描画
 void PaintMiniMap( HWND hWnd );
 
@@ -641,7 +645,9 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					}
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect( hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 
@@ -875,6 +881,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				LoadMapData( g_szSelectFile );
 				if( g_bErrorPassword == TRUE ) MessageBox( g_hWnd, "暗証番号が違います。", "警告！", MB_OK );
 				LoadBitmap();
+				CreateMiniMap();
 			}
 		}
 		else if( LOWORD(wParam) == ID_MENU_SAVE ){
@@ -1020,7 +1027,9 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			DestroyWindow( g_hDlgSelectChara );
 			g_bUpdate = TRUE;
 			RestoreUndoData();
+			CreateMiniMap();
 			InvalidateRect( g_hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 			InvalidateRect( g_hDlgSelectObject, NULL, FALSE );
 			InvalidateRect( g_hDlgSelectMap, NULL, FALSE );
 		}
@@ -1042,7 +1051,9 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					mapObject[mapYtop+y][mapXtop+x] = g_ObjectBuffer[y][x];
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect( g_hWnd, NULL, FALSE );
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		//ツールの終了
 		else if( LOWORD(wParam) == ID_MENU_END ){
@@ -1168,6 +1179,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int 
 	if( g_bErrorPassword == TRUE ) MessageBox( g_hWnd, "暗証番号が違います。", "警告！", MB_OK );
 	// ビットマップ読み込み
 	LoadBitmap();
+	CreateMiniMap();
 
 	// ダイアログ表示
 	g_hDlgSelectObject = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc );
@@ -1256,6 +1268,7 @@ BOOL LoadBitmap()
 		g_hmDC = CreateCompatibleDC( hDC );
 		g_hmDCHalf = CreateCompatibleDC( hDC );
 		g_hmDCMini = CreateCompatibleDC(hDC);
+		g_hmDCMiniMap = CreateCompatibleDC(hDC);
 		g_hmDCAnd = CreateCompatibleDC( hDC );
 		g_hmDCOr = CreateCompatibleDC( hDC );
 		
@@ -1453,6 +1466,32 @@ void PaintStatus( BOOL flag )
 }
 
 
+// ミニマップ作成
+void CreateMiniMap()
+{
+	int y, x;
+	int objNumber, mapNumber;
+	HDC hDC;
+	hDC = GetDC(g_hDlgMiniMap);
+
+	// ミニマップのCG領域確保
+	if (g_hBitmapMiniMap != NULL) {
+		DeleteObject(g_hBitmapMiniMap);
+	}
+	g_hBitmapMiniMap = CreateCompatibleBitmap(hDC, g_iMapSize * 10, g_iMapSize * 10);
+	SelectObject(g_hmDCMiniMap, g_hBitmapMiniMap);
+
+	for (y = 0; y < g_iMapSize; y++) {
+		for (x = 0; x < g_iMapSize; x++) {
+			mapNumber = map[y][x];
+			BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, mapAttribute[mapNumber][ATR_X] / 4, mapAttribute[mapNumber][ATR_Y] / 4, SRCCOPY);
+			// objNumber = mapObject[y][x];
+			// BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, objectAttribute[objNumber][ATR_X] / 4, mapAttribute[objNumber][ATR_Y] / 4, SRCCOPY);
+		}
+	}
+}
+
+
 //##------------------------------------------------------------------
 // ミニマップ描画
 
@@ -1465,14 +1504,7 @@ void PaintMiniMap(HWND hWnd)
 	HGDIOBJ currentBrush;
 
 	hDC = BeginPaint(hWnd, &ps);
-
-	for (j = 0; j < miniMapHeight; ++j) {
-		for (i = 0; i < miniMapWidth; ++i) {
-			// 背景描画
-			mdata = map[j + miniMapYtop][i + miniMapXtop];
-			BitBlt(hDC, i * 10, j * 10, 10, 10, g_hmDCMini, mapAttribute[mdata][ATR_X] / 4, mapAttribute[mdata][ATR_Y] / 4, SRCCOPY);
-		}
-	}
+	BitBlt(hDC, 0, 0, miniMapWidth * 10, miniMapHeight * 10, g_hmDCMiniMap, miniMapXtop * 10, miniMapYtop * 10, SRCCOPY);
 
 	// 画面境界線描画
 	screenPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
@@ -3532,7 +3564,9 @@ LRESULT CALLBACK DialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 				} else {
 					if( strcmp(g_mapcgNameBmp,g_mapcgOld) != 0 ) LoadBitmap();
 				}
+				CreateMiniMap();
 				InvalidateRect( g_hWnd, NULL, FALSE );
+				InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 				g_bUpdate = TRUE;
 			}
 			//戦闘結果の計算
