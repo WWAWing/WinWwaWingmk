@@ -3776,27 +3776,40 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		break;
 
 	case WM_MOUSEWHEEL: {
+		int scrollSize;
+		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollSize, 0);
+		// ‰¡•ûŒü
 		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
-			const int x = GET_WHEEL_DELTA_WPARAM(wParam);
-			if (x < 0) {
-				if (miniMapXtop < (g_iMapSize - miniMapWidth)) ++miniMapXtop;
-				SetScrollPos(hWnd, SB_HORZ, miniMapXtop, 1);
+			if (scrollDelta < 0) {
+				miniMapXtop += scrollSize;
+				if (miniMapXtop > (g_iMapSize - miniMapWidth)) {
+					miniMapXtop = g_iMapSize - miniMapWidth;
+				}
 			}
-			else if (x > 0) {
-				if (miniMapXtop > 0) --miniMapXtop;
-				SetScrollPos(hWnd, SB_HORZ, miniMapXtop, 1);
+			else if (scrollDelta > 0) {
+				miniMapXtop -= scrollSize;
+				if (miniMapXtop < 0) {
+					miniMapXtop = 0;
+				}
 			}
+			SetScrollPos(hWnd, SB_HORZ, miniMapXtop, 1);
 		}
+		// c•ûŒü
 		else {
-			const int y = GET_WHEEL_DELTA_WPARAM(wParam);
-			if (y < 0) {
-				if (miniMapYtop < (g_iMapSize - miniMapHeight)) ++miniMapYtop;
-				SetScrollPos(hWnd, SB_VERT, miniMapYtop, 1);
+			if (scrollDelta < 0) {
+				miniMapYtop += scrollSize;
+				if (miniMapYtop > (g_iMapSize - miniMapHeight)) {
+					miniMapYtop = g_iMapSize - miniMapHeight;
+				}
 			}
-			else if (y > 0) {
-				if (miniMapYtop > 0) --miniMapYtop;
-				SetScrollPos(hWnd, SB_VERT, miniMapYtop, 1);
+			else if (scrollDelta > 0) {
+				miniMapYtop -= scrollSize;
+				if (miniMapYtop < 0) {
+					miniMapYtop = 0;
+				}
 			}
+			SetScrollPos(hWnd, SB_VERT, miniMapYtop, 1);
 		}
 		InvalidateRect(hWnd, NULL, FALSE);
 		break;
