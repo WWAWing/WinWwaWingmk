@@ -18,14 +18,11 @@
 #define IDD_DIALOG_BUY                  114
 #define IDD_DIALOG_NORMAL               115
 #define IDD_DIALOG_EXTRA                116
-#define IDD_DIALOG_FILE                 117
 #define IDD_DIALOG_FOUNDATION           118
-#define IDD_DIALOG_FILESAVE             119
 #define IDD_DIALOG_STREET               120
 #define IDD_DIALOG_LOCALGATE            121
 #define IDD_DIALOG_URLMAP               122
 #define IDD_DIALOG_WALL                 123
-#define IDD_DIALOG_WAIT                 124
 #define IDD_DIALOG_PASSWORD             125
 #define IDI_ICON_WWA                    125
 #define IDD_DIALOG_RANDOM               126
@@ -63,9 +60,7 @@
 #define IDC_EDIT_MODE6                  1017
 #define IDC_EDIT_CHARA                  1018
 #define IDC_EDIT_X                      1019
-#define IDC_STATIC_FILE                 1019
 #define IDC_EDIT_Y                      1020
-#define IDC_COMBO_FILE                  1020
 #define IDC_EDIT_Y2                     1021
 #define IDC_COMBO_BMP                   1021
 #define IDC_EDIT_CHARA2                 1022
