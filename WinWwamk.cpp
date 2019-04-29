@@ -723,28 +723,48 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		InvalidateRect( g_hWnd, NULL, FALSE );
 		break;
 
-	case WM_MOUSEWHEEL:
+	case WM_MOUSEWHEEL: {
+		int scrollLines;
+		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
+		if (parameterResult == FALSE) {
+			scrollLines = 1;
+		}
+
+		// ‰¡•ûŒü
 		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
-			x = GET_WHEEL_DELTA_WPARAM(wParam);
-			if (x < 0) {
-				if (mapXtop < (g_iMapSize - 11)) ++mapXtop;
-				SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
-			} else if (x > 0) {
-				if (mapXtop > 0) --mapXtop;
-				SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
+			if (scrollDelta < 0) {
+				mapXtop += scrollLines;
+				if (mapXtop > g_iMapSize - 11) {
+					mapXtop = g_iMapSize - 11;
+				}
 			}
-		} else {
-			y = GET_WHEEL_DELTA_WPARAM(wParam);
-			if (y < 0) {
-				if (mapYtop < (g_iMapSize - 11)) ++mapYtop;
-				SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+			else if (scrollDelta > 0) {
+				mapXtop -= scrollLines;
+				if (mapXtop < 0) {
+					mapXtop = 0;
+				}
+			}
+			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
+		}
+		// c•ûŒü
+		else {
+			if (scrollDelta < 0) {
+				mapYtop += scrollLines;
+				if (mapYtop > g_iMapSize - 11) {
+					mapYtop = g_iMapSize - 11;
+				}
 			} else if (y > 0) {
-				if (mapYtop > 0) --mapYtop;
-				SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
+				mapYtop -= scrollLines;
+				if (mapYtop < 0) {
+					mapYtop = 0;
+				}
 			}
+			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		InvalidateRect( g_hWnd, NULL, FALSE );
 		break;
+	}
 
 	case WM_HSCROLL:
 		if( LOWORD(wParam) == SB_LINEDOWN ){
