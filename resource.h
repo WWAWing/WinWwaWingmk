@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by Script2.rc
+// Microsoft Visual C++ で生成されたインクルード ファイル。
+// Script2.rc で使用
 //
 #define IDR_MENU1                       101
 #define IDD_DIALOG_EDITMAP              102
@@ -18,14 +18,11 @@
 #define IDD_DIALOG_BUY                  114
 #define IDD_DIALOG_NORMAL               115
 #define IDD_DIALOG_EXTRA                116
-#define IDD_DIALOG_FILE                 117
 #define IDD_DIALOG_FOUNDATION           118
-#define IDD_DIALOG_FILESAVE             119
 #define IDD_DIALOG_STREET               120
 #define IDD_DIALOG_LOCALGATE            121
 #define IDD_DIALOG_URLMAP               122
 #define IDD_DIALOG_WALL                 123
-#define IDD_DIALOG_WAIT                 124
 #define IDD_DIALOG_PASSWORD             125
 #define IDI_ICON_WWA                    125
 #define IDD_DIALOG_RANDOM               126
@@ -62,9 +59,7 @@
 #define IDC_EDIT_MODE6                  1017
 #define IDC_EDIT_CHARA                  1018
 #define IDC_EDIT_X                      1019
-#define IDC_STATIC_FILE                 1019
 #define IDC_EDIT_Y                      1020
-#define IDC_COMBO_FILE                  1020
 #define IDC_EDIT_Y2                     1021
 #define IDC_COMBO_BMP                   1021
 #define IDC_EDIT_CHARA2                 1022
@@ -158,6 +153,11 @@
 #define IDC_BUTTON_MAP_PARTS            1094
 #define IDC_EDIT_OBJ_PARTS              1095
 #define IDC_BUTTON_OBJ_PARTS            1096
+#define IDC_EDIT_PARTS_NUMBER           1097
+#define IDC_STATIC_PARTS_NUMBER         1098
+#define IDC_STATIC_CURRENT_POSITION     1101
+#define IDC_EDIT3                       1102
+#define IDC_EDIT_CURRENT_POSITION       1102
 #define ID_MENUITEM40001                40001
 #define ID_MENU_NEW                     40001
 #define ID_MENUITEM40002                40002
@@ -198,14 +198,17 @@
 #define ID_MENU_MAPCOPY                 40033
 #define ID_MENU_MAPPASTE                40034
 #define ID_MENU_BASICMES                40035
+#define ID_Menu                         40036
+#define ID_MARKDRAW                     40037
+#define ID_MENU_MARKDRAW                40038
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        133
-#define _APS_NEXT_COMMAND_VALUE         40036
-#define _APS_NEXT_CONTROL_VALUE         1096
+#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_COMMAND_VALUE         40039
+#define _APS_NEXT_CONTROL_VALUE         1103
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
