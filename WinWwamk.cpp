@@ -1149,7 +1149,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	PositionY = GetPrivateProfileInt("Main", "PositionY", 0, g_szSettingFile);
 
 	// メインウィンドウ作成
-	g_hWnd = CreateWindow("WWAMK", "ＷＷＡマップ作成ツール",
+	g_hWnd = CreateWindow("WWAMK", "WWA Wingマップ作成ツール",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_HSCROLL | WS_VSCROLL,
 		PositionX, PositionY,
 		CW_USEDEFAULT, CW_USEDEFAULT,
