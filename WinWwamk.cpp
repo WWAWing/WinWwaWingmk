@@ -736,7 +736,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapYtop <= (g_iMapSize - 16)) mapYtop += 5;
+			if (mapYtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapYtop += 5;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -778,7 +778,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					mapYtop = g_iMapSize - SCREEN_CHIP_SIZE;
 				}
 			}
-			else if (y > 0) {
+			else if (scrollDelta > 0) {
 				mapYtop -= scrollLines;
 				if (mapYtop < 0) {
 					mapYtop = 0;
@@ -808,7 +808,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapXtop <= (g_iMapSize - 16)) mapXtop += 5;
+			if (mapXtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapXtop += 5;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
