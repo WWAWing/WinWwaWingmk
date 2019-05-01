@@ -59,10 +59,11 @@ BEGIN
     POPUP "表示(&V)"
     BEGIN
         MENUITEM "境界線の表示切替(&Q)\tCtrl+Q",        ID_MENU_LINEDRAW
-        MENUITEM "物体パーツ番号の表示切替(&W)\tCtrl+W",    ID_MENU_MARKDRAW
+        MENUITEM "物体パーツ番号の表示切替(&W)\tCtrl+W",       ID_MENU_MARKDRAW
         MENUITEM "クイックビューウインドウの表示",             ID_MENU_QVIEW, GRAYED
         MENUITEM "物体パーツ選択ウインドウの表示",             ID_MENU_OBJWINDOW, GRAYED
         MENUITEM "背景パーツ選択ウインドウの表示",             ID_MENU_MAPWINDOW, GRAYED
+		MENUITEM "ウィンドウサイズの拡大縮小",				   ID_MENU_CHANGEWINDOWSIZE
     END
 END
 

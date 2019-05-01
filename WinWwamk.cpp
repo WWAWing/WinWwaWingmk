@@ -94,6 +94,7 @@
 
 // 1画面の1辺のチップサイズ
 #define SCREEN_CHIP_SIZE	21
+#define DEFALUT_SCREEN_CHIP_SIZE 11
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
 
@@ -220,6 +221,8 @@ BOOL g_bInitial = FALSE;		//初期化済みか？
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
+
+BOOL g_hugeMapSize = FALSE; // MapSizeが21 * 21か？
 
 char g_MapData[FILE_DATA_MAX];
 char PressData[FILE_DATA_MAX];
@@ -1012,6 +1015,16 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectMap, TRUE);
 			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED);
 		}
+		// マップウィンドウの拡大縮小
+		else if (LOWORD(wParam) == ID_MENU_CHANGEWINDOWSIZE) {
+			int SizeX, SizeY;
+			int setScreenChipSize = g_hugeMapSize ? DEFALUT_SCREEN_CHIP_SIZE : SCREEN_CHIP_SIZE;
+			setScreenChipSize++;
+			g_hugeMapSize = !g_hugeMapSize;
+			SizeX = (setScreenChipSize * CHIP_SIZE);
+			SizeY = ((setScreenChipSize + 1) * CHIP_SIZE);
+			SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+		}
 		// パーツのコピー
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
 			if (g_EditMode == 0) {
@@ -1159,8 +1172,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// サイズ変更
 	GetWindowRect(g_hWnd, &WindowRect);
 	GetClientRect(g_hWnd, &ClientRect);
-	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (SCREEN_CHIP_SIZE * CHIP_SIZE);
-	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (SCREEN_CHIP_SIZE * CHIP_SIZE) + 20;
+	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (DEFALUT_SCREEN_CHIP_SIZE * CHIP_SIZE);
+	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (DEFALUT_SCREEN_CHIP_SIZE * CHIP_SIZE) + 20;
 	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
 
 	if (g_hWnd != NULL) {
