@@ -93,7 +93,7 @@
 #define OBJECT_ATR_MAX		60
 
 // 1画面の1辺のチップサイズ
-#define SCREEN_CHIP_SIZE	11
+#define SCREEN_CHIP_SIZE	21
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
 
@@ -1147,19 +1147,20 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// 設定ファイル読み込み
 	PositionX = GetPrivateProfileInt("Main", "PositionX", CW_USEDEFAULT, g_szSettingFile);
 	PositionY = GetPrivateProfileInt("Main", "PositionY", 0, g_szSettingFile);
+	int window_size = SCREEN_CHIP_SIZE * CHIP_SIZE;
 
 	// メインウィンドウ作成
 	g_hWnd = CreateWindow("WWAMK", "WWA Wingマップ作成ツール",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_HSCROLL | WS_VSCROLL,
 		PositionX, PositionY,
-		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT , CW_USEDEFAULT,
 		NULL, NULL, hInst, NULL);
 
 	// サイズ変更
 	GetWindowRect(g_hWnd, &WindowRect);
 	GetClientRect(g_hWnd, &ClientRect);
-	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + 440;
-	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + 460;
+	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (SCREEN_CHIP_SIZE * CHIP_SIZE);
+	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (SCREEN_CHIP_SIZE * CHIP_SIZE) + 20;
 	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
 
 	if (g_hWnd != NULL) {
