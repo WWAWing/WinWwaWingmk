@@ -92,6 +92,11 @@
 #define MAP_ATR_MAX			60
 #define OBJECT_ATR_MAX		60
 
+// バッファ文字列の最大長
+#define BUFFER_STR_MAX		100
+#define FILE_PATH_STR_MAX	250
+#define NUMBER_STR_MAX		30
+
 // 1画面の1辺のチップサイズ
 #define SCREEN_CHIP_SIZE	11
 // 1チップのサイズ (ピクセル単位)
@@ -116,11 +121,11 @@ int charaX, charaY;
 //メッセージ用バッファ
 char g_StrMessage[MESSAGE_NUMBER_MAX][MESSAGE_STR_MAX];
 char g_StrMessageSystem[20][MESSAGE_STR_MAX];
-char g_worldName[100];
-char g_worldPassword[100];
-char g_mapcgName[100];
-char g_mapcgNameBmp[100];
-char g_mapcgOld[100];
+char g_worldName[BUFFER_STR_MAX];
+char g_worldPassword[BUFFER_STR_MAX];
+char g_mapcgName[BUFFER_STR_MAX];
+char g_mapcgNameBmp[BUFFER_STR_MAX];
+char g_mapcgOld[BUFFER_STR_MAX];
 
 //マップ位置
 int mapX, mapY;
@@ -224,10 +229,10 @@ BOOL g_iColorTp;
 char g_MapData[FILE_DATA_MAX];
 char PressData[FILE_DATA_MAX];
 
-char g_szSettingFile[250] = "./WinWwamk.ini";	//設定ファイル名
-char g_szSelectFile[250] = "wwamap.dat";		//ファイル名
+char g_szSettingFile[FILE_PATH_STR_MAX] = "./WinWwamk.ini";	//設定ファイル名
+char g_szSelectFile[FILE_PATH_STR_MAX] = "wwamap.dat";		//ファイル名
 char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.1.8";
-char g_szSelectDir[250];
+char g_szSelectDir[FILE_PATH_STR_MAX];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
 int g_MouseOldX, g_MouseOldY;
@@ -873,8 +878,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		// データのロード、セーブ
 		if (LOWORD(wParam) == ID_MENU_LOAD) {
 			int i;
-			char FileName[250] = "*.dat";
-			char CurrentDir[250];
+			char FileName[FILE_PATH_STR_MAX] = "*.dat";
+			char CurrentDir[FILE_PATH_STR_MAX];
 			OPENFILENAME ofn;
 
 			GetCurrentDirectory(sizeof(CurrentDir), CurrentDir);
@@ -891,9 +896,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (GetOpenFileName(&ofn)) {
 				//ディレクトリ検出
 				for (i = strlen(FileName); i > 0; --i) if (FileName[i] == '\\') break;
-				strcpy(g_szSelectDir, FileName);
+				strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, FileName);
 				g_szSelectDir[i + 1] = '\0';
-				strcpy(g_szSelectFile, (FileName + i + 1));
+				strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (FileName + i + 1));
 				//データ読み込み
 				LoadMapData(g_szSelectFile);
 				if (g_bErrorPassword == TRUE) MessageBox(g_hWnd, "暗証番号が違います。", "警告！", MB_OK);
@@ -902,8 +907,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		else if (LOWORD(wParam) == ID_MENU_SAVE) {
 			int i;
-			char FileName[250] = "*.dat";
-			char CurrentDir[250];
+			char FileName[FILE_PATH_STR_MAX] = "*.dat";
+			char CurrentDir[FILE_PATH_STR_MAX];
 
 			OPENFILENAME ofn;
 			GetCurrentDirectory(sizeof(CurrentDir), CurrentDir);
@@ -920,9 +925,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (GetSaveFileName(&ofn)) {
 				//ディレクトリ検出
 				for (i = strlen(FileName); i > 0; --i) if (FileName[i] == '\\') break;
-				strcpy(g_szSelectDir, FileName);
+				strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, FileName);
 				g_szSelectDir[i + 1] = '\0';
-				strcpy(g_szSelectFile, (FileName + i + 1));
+				strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (FileName + i + 1));
 				//データ保存
 				SaveMapData(g_szSelectFile);
 			}
@@ -1016,12 +1021,12 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
 			if (g_EditMode == 0) {
 				for (i = 0; i < MAP_ATR_MAX; ++i) g_CopyMap[i] = mapAttribute[g_SelectMapData][i];
-				strcpy(g_CopyMapStr, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
+				strcpy_s(g_CopyMapStr, MESSAGE_STR_MAX, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
 				g_CopyMap[ATR_STRING] = 0;
 			}
 			else if (g_EditMode == 1) {
 				for (i = 0; i < OBJECT_ATR_MAX; ++i) g_CopyObject[i] = objectAttribute[g_SelectObjectData][i];
-				strcpy(g_CopyObjectStr, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
+				strcpy_s(g_CopyObjectStr, MESSAGE_STR_MAX, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
 				g_CopyObject[ATR_STRING] = 0;
 			}
 		}
@@ -1184,9 +1189,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		}
 		// ファイル名抽出
 		for (i = strlen(pszCmdLine); i > 0; --i) if (pszCmdLine[i] == '\\') break;
-		strcpy(g_szSelectFile, (pszCmdLine + i + 1));
+		strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (pszCmdLine + i + 1));
 		// ディレクトリ移動
-		strcpy(g_szSelectDir, pszCmdLine);
+		strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, pszCmdLine);
 		g_szSelectDir[i + 1] = '\0';
 		SetCurrentDirectory(g_szSelectDir);
 	}
@@ -1287,8 +1292,8 @@ BOOL LoadBitmap()
 		SelectObject(g_hmDCExtra, g_hBitmapExtra);
 	}
 	// 現在のビットマップ名記録
-	if (g_bLoadGif == TRUE) strcpy(g_mapcgOld, g_mapcgName);
-	else strcpy(g_mapcgOld, g_mapcgNameBmp);
+	if (g_bLoadGif == TRUE) strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgName);
+	else strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 
 	// 読み出し中ダイアログ表示
 	Rectangle(hDC, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, CHIP_SIZE * SCREEN_CHIP_SIZE);
@@ -1299,7 +1304,7 @@ BOOL LoadBitmap()
 	if (g_bFileNotFound == TRUE) return FALSE;
 	// GIF読み込み失敗時
 	if (g_bLoadGif == FALSE) {
-		strcpy(g_mapcgOld, g_mapcgNameBmp);
+		strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 		if (g_pDib->ReadFile(g_mapcgNameBmp) == FALSE) {
 			MessageBox(g_hWnd, "このマップデータに対応する画像ファイル（256色BMPファイル）が読み込めません。\n「編集－基本設定の編集」で256色BMPファイルを指定してください。\n\nこのシステムでは、GIFファイルは直接読み込めないので、\n編集用に256色BMPファイルが必要になります。", "BMPファイル読み込み失敗", MB_OK);
 			// デバイス解放
@@ -2921,7 +2926,7 @@ void DisplayObjectDialog()
 	int i;
 	int number;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
+	char strCut[BUFFER_STR_MAX];
 	int id;
 	int position;
 	int type;
@@ -2986,13 +2991,13 @@ void DisplayObjectDialog()
 				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) ){
 		SetDlgItemText( g_hDlgObject, IDC_EDIT_MESSAGE, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]] );
 	} else if( type == OBJECT_URLGATE ){
-		strcpy( str, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]] );
+		strcpy_s(str, MESSAGE_STR_MAX, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]]);
 		//文字列分割
 		for( i = 0 ; i < (int)strlen(str) ; ++i ){
 			if( (str[i] == 0x0D) && (str[i+1] == 0x0A) ){
 				str[i] = '\0';
-				strcpy( strCut, str+i+2 );
-				SetDlgItemText( g_hDlgObject, IDC_EDIT_TARGET, strCut );
+				strcpy_s(strCut, BUFFER_STR_MAX, str + i + 2);
+				SetDlgItemText(g_hDlgObject, IDC_EDIT_TARGET, strCut);
 				break;
 			}
 		}
@@ -3127,12 +3132,12 @@ void DisplayMapDialog()
 	if( (type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK) ){
 		SetDlgItemText( g_hDlgMap, IDC_EDIT_MESSAGE, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]] );
 	} else if( type == MAP_URLGATE ){
-		strcpy( str, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]] );
+		strcpy_s(str, MESSAGE_STR_MAX, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]]);
 		//文字列分割
 		for( i = 0 ; i < (int)strlen(str) ; ++i ){
 			if( (str[i] == 0x0D) && (str[i+1] == 0x0A) ){
 				str[i] = '\0';
-				strcpy( strCut, str+i+2 );
+				strcpy_s(strCut, BUFFER_STR_MAX, str + i + 2);
 				SetDlgItemText( g_hDlgMap, IDC_EDIT_TARGET, strCut );
 				break;
 			}
@@ -3200,7 +3205,7 @@ void SetObjectData( HWND hWnd, int charaNumber )
 	int number;
 	int length;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
+	char strCut[BUFFER_STR_MAX];
 	int type = objectAttribute[charaNumber][ATR_TYPE];
 	int position;
 
@@ -3221,7 +3226,7 @@ void SetObjectData( HWND hWnd, int charaNumber )
 	} else if( type == OBJECT_URLGATE ){
 		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
 		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if( (strstr(strCut,"expand") != 0) || (strstr(strCut,"ＥＸＰＡＮＤ") != 0) ) strcpy( strCut, "EXPAND" );
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
 		if( strlen(strCut) != 0 ){
 			length = strlen(str);
 			str[length] = 0x0D;
@@ -3315,7 +3320,7 @@ void SetMapData( HWND hWnd, int charaNumber )
 	} else if( type == MAP_URLGATE ){
 		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
 		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if( (strstr(strCut,"expand") != 0) || (strstr(strCut,"ＥＸＰＡＮＤ") != 0) ) strcpy( strCut, "EXPAND" );
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
 		if( strlen(strCut) != 0 ){
 			length = strlen(str);
 			str[length] = 0x0D;
@@ -3436,13 +3441,13 @@ void SetAppearChara( int mapNumber, BOOL flag )
 	int i;
 	int dataChara;
 	int x, y;
-	char str[30];
-	char partsNumberStr[30];
+	char str[NUMBER_STR_MAX];
+	char partsNumberStr[NUMBER_STR_MAX];
 
 	//拡張キャラクタ・データコンバート
 	for( i = 0 ; i < 10 ; ++i ){
 		GetDlgItemText( g_hDlgExtra, g_EditId[i], str, sizeof(str) );
-		strcpy( partsNumberStr, str );
+		strcpy_s(partsNumberStr, NUMBER_STR_MAX, str);
 
 		// プラスマイナス記号によるパーツ番号インクリメント・デクリメント
 		if (str[0] == '+') {
@@ -3732,7 +3737,9 @@ LRESULT CALLBACK DialogProcBasicMes(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			//指定文字列修正
 			int i;
 			for (i = 5; i <= 9; ++i) {
-				if ((strstr(g_StrMessage[i], "blank") != 0) || (strstr(g_StrMessage[i], "ＢＬＡＮＫ") != 0) || (strstr(g_StrMessage[i], "BLANK") != 0)) strcpy(g_StrMessage[i], "BLANK");
+				if ((strstr(g_StrMessage[i], "blank") != 0) || (strstr(g_StrMessage[i], "ＢＬＡＮＫ") != 0) || (strstr(g_StrMessage[i], "BLANK") != 0)) {
+					strcpy_s(g_StrMessage[i], MESSAGE_STR_MAX, "BLANK");
+				}
 			}
 			DestroyWindow(hWnd);
 			return 1;
@@ -3901,7 +3908,7 @@ void SetMessageData(int* point, char* str)
 		}
 		*point = number;
 		//メッセージ格納
-		strcpy(g_StrMessage[*point], str);
+		strcpy_s(g_StrMessage[*point], MESSAGE_STR_MAX, str);
 	}
 	else if (strlen(str) == 0) {
 		g_StrMessage[*point][0] = '\0';
@@ -3909,7 +3916,7 @@ void SetMessageData(int* point, char* str)
 	}
 	else {
 		//メッセージ格納
-		strcpy(g_StrMessage[*point], str);
+		strcpy_s(g_StrMessage[*point], MESSAGE_STR_MAX, str);
 	}
 }
 
@@ -3957,7 +3964,7 @@ void MakeNewMap()
 	g_mapcgNameBmp[0] = '\0';
 	g_mapcgName[0] = '\0';
 	g_mapcgOld[0] = '\0';
-	strcpy(g_szSelectFile, "newmap.dat");
+	strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, "newmap.dat");
 	//タイトルテキスト設定
 	char sTitle[100];
 	sprintf(sTitle, "%s [%s]", g_szTitleName, g_szSelectFile);
