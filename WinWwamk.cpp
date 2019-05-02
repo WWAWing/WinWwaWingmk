@@ -1070,8 +1070,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		// マップ画面ごとコピー
 		else if (LOWORD(wParam) == ID_MENU_MAPCOPY) {
-			for (x = 0; x < SCREEN_CHIP_SIZE; ++x) {
-				for (y = 0; y < SCREEN_CHIP_SIZE; ++y) {
+		int nowScreenChipSize = g_hugeMapSize ? SCREEN_CHIP_SIZE : DEFALUT_SCREEN_CHIP_SIZE;
+			for (x = 0; x < nowScreenChipSize; ++x) {
+				for (y = 0; y < nowScreenChipSize; ++y) {
 					g_MapBuffer[y][x] = map[mapYtop + y][mapXtop + x];
 					g_ObjectBuffer[y][x] = mapObject[mapYtop + y][mapXtop + x];
 				}
@@ -1080,8 +1081,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		else if (LOWORD(wParam) == ID_MENU_MAPPASTE) {
 			// Undoセット
 			SetUndoData();
-			for (x = 0; x < SCREEN_CHIP_SIZE; ++x) {
-				for (y = 0; y < SCREEN_CHIP_SIZE; ++y) {
+			int nowScreenChipSize = g_hugeMapSize ? SCREEN_CHIP_SIZE : DEFALUT_SCREEN_CHIP_SIZE;
+			for (x = 0; x < nowScreenChipSize; ++x) {
+				for (y = 0; y < nowScreenChipSize; ++y) {
 					map[mapYtop + y][mapXtop + x] = g_MapBuffer[y][x];
 					mapObject[mapYtop + y][mapXtop + x] = g_ObjectBuffer[y][x];
 				}
