@@ -482,6 +482,26 @@ void RestoreUndoData();
 // GIF画像の読み込み
 BOOL ReadGifImage();
 
+void resetSelectMapAndObjectPosition() {
+	RECT rect;
+	RECT rectBox;
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgSelectObject, &rect);
+	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	GetWindowRect(g_hDlgSelectObject, &rectBox);
+	GetWindowRect(g_hDlgSelectMap, &rect);
+	MoveWindow(g_hDlgSelectMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgSelectMap, SW_SHOW);
+	ShowWindow(g_hDlgSelectObject, SW_SHOW);
+
+	// クイックビュー
+	DestroyWindow(g_hDlgQuickView);
+	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgQuickView, &rect);
+	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgQuickView, SW_SHOW);
+}
 
 //##------------------------------------------------------------------
 // イベント処理
@@ -1024,6 +1044,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SizeX = (setScreenChipSize * CHIP_SIZE);
 			SizeY = ((setScreenChipSize + 1) * CHIP_SIZE) + 15;
 			SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+			// 物体・背景選択パーツウィンドウ位置のリセット
+			resetSelectMapAndObjectPosition();
 		}
 		// パーツのコピー
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
@@ -1131,8 +1153,6 @@ void DeleteCheckMenu()
 	CheckMenuItem( GetMenu(g_hWnd), ID_MENU_DELOBJ, MF_UNCHECKED );
 }
 
-
-
 //##------------------------------------------------------------------
 // ＷＷＡ作成ツール
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int CmdShow)
@@ -1218,24 +1238,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// ダイアログ表示
 	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
 	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
-	// ダイアログ移動
-	RECT rect;
-	RECT rectBox;
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgSelectObject, &rect);
-	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	GetWindowRect(g_hDlgSelectObject, &rectBox);
-	GetWindowRect(g_hDlgSelectMap, &rect);
-	MoveWindow(g_hDlgSelectMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgSelectMap, SW_SHOW);
-	ShowWindow(g_hDlgSelectObject, SW_SHOW);
 
-	// クイックビュー
-	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgQuickView, &rect);
-	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgQuickView, SW_SHOW);
+	// 物体・背景選択パーツウィンドウ位置のリセット
+	resetSelectMapAndObjectPosition();
 
 	// 画面色数取得
 	HDC hDC = GetDC(g_hWnd);
