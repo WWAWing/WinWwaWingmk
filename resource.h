@@ -158,6 +158,7 @@
 #define IDC_STATIC_CURRENT_POSITION     1101
 #define IDC_EDIT3                       1102
 #define IDC_EDIT_CURRENT_POSITION       1102
+#define IDC_STATIC_NUMBER               1103
 #define ID_MENUITEM40001                40001
 #define ID_MENU_NEW                     40001
 #define ID_MENUITEM40002                40002
@@ -206,9 +207,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         40039
-#define _APS_NEXT_CONTROL_VALUE         1103
+#define _APS_NEXT_CONTROL_VALUE         1104
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -1816,7 +1816,7 @@ BOOL LoadMapData(char* FileName)
 			//暗証番号変換
 			number = atoi(g_worldPassword);
 			number = (((number / 10) - 1197) / 17) - 2357;
-			_itoa(number, g_worldPassword, 10);
+			_itoa_s(number, g_worldPassword, BUFFER_STR_MAX, 10);
 		}
 		ShowWindow(g_hDlgSelectObject, FALSE);
 		ShowWindow(g_hDlgSelectMap, FALSE);
@@ -1839,9 +1839,9 @@ BOOL LoadMapData(char* FileName)
 	}
 
 	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf(sTitle, "%s [%s]", g_szTitleName, FileName);
-	SetWindowText(g_hWnd, sTitle);
+	CString titleText;
+	titleText.Format("%s [%s]", g_szTitleName, FileName);
+	SetWindowText(g_hWnd, titleText);
 
 	return TRUE;
 }
@@ -2017,8 +2017,8 @@ BOOL SaveMapData( char *FileName )
 	//暗証番号変換
 	number = atoi( g_worldPassword );
 	if( number != 0 ){
-		number = ((number +2357) *17 +1197) *10 +(number %9);
-		_itoa( number, szSavePassword, 10 );
+		number = ((number + 2357) * 17 + 1197) * 10 + (number % 9);
+		_itoa_s(number, szSavePassword, 30, 10);
 	} else {
 		szSavePassword[0] = '\0';
 	}
@@ -2053,18 +2053,18 @@ BOOL SaveMapData( char *FileName )
 	WriteFile( hFile, g_MapData, pointer, &dwWritten, NULL );
 	CloseHandle( hFile );
 
-	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf( sTitle, "%s [%s]", g_szTitleName, FileName );
-	SetWindowText( g_hWnd, sTitle );
+	// タイトルテキスト設定
+	CString titleText;
+	titleText.Format("%s [%s]", g_szTitleName, FileName);
+	SetWindowText(g_hWnd, titleText);
 
-	//バックアップデータ作成
-	char szBackupFile[250];
+	// バックアップデータ作成
+	CString backupFileName;
 	SYSTEMTIME systime;
 	GetLocalTime( &systime );
-	sprintf( szBackupFile, "backup\\%s%d.dat", FileName, systime.wHour );
-	//書き込み
-	hFile = CreateFile( szBackupFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	backupFileName.Format("backup\\%s%d.dat", FileName, systime.wHour);
+	// 書き込み
+	hFile = CreateFile( backupFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile != INVALID_HANDLE_VALUE ){
 		WriteFile( hFile, g_MapData, pointer, &dwWritten, NULL );
 		CloseHandle( hFile );
@@ -2108,31 +2108,31 @@ void paintMapAll(HDC hDC)
 	//変数定義
 	int i, j;
 	int mdata;
-	char objectNumber[10];
 	HFONT numberFont = CreateFont(14, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, FF_DONTCARE);
 	HFONT defaultFont = SelectFont(hDC, numberFont);
 
 	//マップ描画
 	for (j = 0; j < SCREEN_CHIP_SIZE; ++j) {
 		for (i = 0; i < SCREEN_CHIP_SIZE; ++i) {
-			//背景描画
+			// 背景描画
 			mdata = map[j + mapYtop][i + mapXtop];
 			BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[mdata][ATR_X], mapAttribute[mdata][ATR_Y], SRCCOPY);
 
-			//オブジェクト描画
+			// オブジェクト描画
 			mdata = mapObject[j + mapYtop][i + mapXtop];
 			if (mdata != 0) {
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCAnd, objectAttribute[mdata][ATR_X], objectAttribute[mdata][ATR_Y], SRCAND);
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCOr, objectAttribute[mdata][ATR_X], objectAttribute[mdata][ATR_Y], SRCPAINT);
 			}
-			//プレーヤーキヤラクタ描画
+			// プレーヤーキヤラクタ描画
 			if ((charaX == (i + mapXtop)) && (charaY == (j + mapYtop))) {
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCAnd, CHIP_SIZE * 4, 0, SRCAND);
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCOr, CHIP_SIZE * 4, 0, SRCPAINT);
 			}
-			//透明パーツ識別マーク描画
+			// 物体パーツ番号描画
 			if (g_ObjectNumberFlag == TRUE && mdata != 0) {
-				sprintf(objectNumber, "%d", mdata);
+				char objectNumber[10];
+				sprintf_s(objectNumber, 10, "%d", mdata);
 				TextOut(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, objectNumber, strlen(objectNumber));
 			}
 		}
@@ -2154,7 +2154,6 @@ void PaintWindowSelectObject(HWND hWnd)
 	hDC = BeginPaint(hWnd, &ps);
 	int selectX = g_SelectObjectData % DIALOG_OBJECT_SELECT_COLUMN;
 	int selectY = g_SelectObjectData / DIALOG_OBJECT_SELECT_COLUMN;
-	char str[50];
 
 	//イメージの描画
 	for (j = 0; j < DIALOG_OBJECT_SELECT_LINE; ++j) {
@@ -2196,7 +2195,6 @@ void PaintWindowSelectMap(HWND hWnd)
 	hDC = BeginPaint(hWnd, &ps);
 	int selectX = g_SelectMapData % DIALOG_MAP_SELECT_COLUMN;
 	int selectY = g_SelectMapData / DIALOG_MAP_SELECT_COLUMN;
-	char str[50];
 
 	//イメージの描画
 	for (j = 0; j < DIALOG_MAP_SELECT_LINE; ++j) {
@@ -2581,17 +2579,16 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		break;
 
 	case WM_PAINT: {
-		//オブジェクト描画
+		// オブジェクト描画
 		HDC hDC = GetDC( hWnd );
 		BitBlt( hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[GetCharaNumber(hWnd)][ATR_X], objectAttribute[GetCharaNumber(hWnd)][ATR_Y], SRCCOPY );
 		BitBlt( hDC, 50, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[GetCharaNumber(hWnd)][ATR_X2], objectAttribute[GetCharaNumber(hWnd)][ATR_Y2], SRCCOPY );
-		//文字表示
-		char str[50];
-		SetBkMode( hDC, TRANSPARENT );
-		sprintf( str, "物体番号：%d", GetCharaNumber(hWnd) );
-		TextOut( hDC,96,27,str,strlen(str) );
 		ReleaseDC( hWnd, hDC );
-		//ウィンドウ再描画
+		// 文字表示
+		CString partsNumberStr;
+		partsNumberStr.Format("物体番号: %d", GetCharaNumber(hWnd));
+		SetDlgItemText(hWnd, IDC_STATIC_NUMBER, partsNumberStr);
+		// ウィンドウ再描画
 		if( g_bRestoreObjectDialog == TRUE ){
 			DestroyWindow( hWnd );
 			return 1;
@@ -2674,12 +2671,11 @@ LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		// オブジェクト描画
 		HDC hDC = GetDC(hWnd);
 		BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[GetCharaNumber(hWnd)][ATR_X], mapAttribute[GetCharaNumber(hWnd)][ATR_Y], SRCCOPY);
-		// 文字表示
-		char str[50];
-		SetBkMode(hDC, TRANSPARENT);
-		sprintf(str, "背景番号：%d", GetCharaNumber(hWnd));
-		TextOut(hDC, 96, 27, str, strlen(str));
 		ReleaseDC(hWnd, hDC);
+		// 文字表示
+		CString partsNumberStr;
+		partsNumberStr.Format("背景番号: %d", GetCharaNumber(hWnd));
+		SetDlgItemText(hWnd, IDC_STATIC_NUMBER, partsNumberStr);
 		// ウィンドウ再描画
 		if (g_bRestoreMapDialog == TRUE) {
 			DestroyWindow(hWnd);
@@ -2927,7 +2923,7 @@ void DisplayObjectDialog()
 	int number;
 	char str[MESSAGE_STR_MAX];
 	char strCut[BUFFER_STR_MAX];
-	int id;
+	int dialogId = -1;
 	int position;
 	int type;
 	RECT rect;
@@ -2945,18 +2941,18 @@ void DisplayObjectDialog()
 		MessageBox( g_hWnd, "パーツ番号０の物体は編集できません。\nこのパーツはマップの物体を消去するときに指定してください。", "注意！", MB_OK );
 		return;
 	}
-	//種類の判定
-	for( position = 0 ; position < 20 ; ++position ){
-		if( OBJ[position].Object == END ) break;
-		if( type == OBJ[position].Object ){
-			id = OBJ[position].Id;
+	// 種類の判定
+	for (position = 0; position < 20; ++position) {
+		if (OBJ[position].Object == END) break;
+		if (type == OBJ[position].Object) {
+			dialogId = OBJ[position].Id;
 			break;
 		}
 	}
-	if( id == 20 ) return;
+	if( dialogId == -1 ) return;
 
 	//ダイアログの作成
-	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditObjectDialogProc );
+	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(dialogId), g_hWnd, (DLGPROC)EditObjectDialogProc );
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgObject, IDC_COMBO_OBJECT );
 	for( i = 0 ; i < 13 ; ++i ) SendMessage( hwndCombo, CB_ADDSTRING, 0, (LPARAM)OBJ[i].Name );
@@ -3023,15 +3019,22 @@ void DisplayObjectDialog()
 					int position = objectAttribute[g_EditObjectData][Object[number].Atr];
 					if( position > 9000 ){
 						position = position - 10000;
-						if( position >= 0 ) sprintf( str, "+%d", position );
-						else sprintf( str, "%d", position );
-					} else {
-						sprintf( str, "%d", position );
+
+						CString jumpValue;
+						if (position >= 0) {
+							jumpValue.Format("+%d", position);
+						}
+						else {
+							jumpValue.Format("%d", position);
+						}
+						SetDlgItemText(g_hDlgObject, Object[number].Id, jumpValue);
 					}
-					SetDlgItemText( g_hDlgObject, Object[number].Id, str );
-				} else {
-					_itoa( objectAttribute[g_EditObjectData][Object[number].Atr], str, 10 );
-					SetDlgItemText( g_hDlgObject, Object[number].Id, str );
+					else {
+						SetDlgItemInt( g_hDlgObject, Object[number].Id, position, FALSE);
+					}
+				}
+				else {
+					SetDlgItemInt(g_hDlgObject, Object[number].Id, objectAttribute[g_EditObjectData][Object[number].Atr], FALSE);
 				}
 			}
 			//コンボボックスの場合
@@ -3042,8 +3045,7 @@ void DisplayObjectDialog()
 			}
 			//エディットボックスの場合
 			else {
-				_itoa( status, str, 10 );
-				SetDlgItemText( g_hDlgObject, Object[number].Id, str );
+				SetDlgItemInt(g_hDlgObject, Object[number].Id, status, TRUE);
 			}
 		}
 	}
@@ -3085,14 +3087,13 @@ void DisplayObjectDialog()
 
 //##------------------------------------------------------------------
 // 背景編集ダイアログの表示
-
 void DisplayMapDialog()
 {
 	int i;
 	int number;
 	char str[MESSAGE_STR_MAX];
 	char strCut[50];
-	int id;
+	int dialogId = -1;
 	int position;
 	int type;
 	RECT rect;
@@ -3114,14 +3115,14 @@ void DisplayMapDialog()
 	for( position = 0 ; position < 20 ; ++position ){
 		if( MAP[position].Object == END ) break;
 		if( type == MAP[position].Object ){
-			id = MAP[position].Id;
+			dialogId = MAP[position].Id;
 			break;
 		}
 	}
-	if( id == 20 ) return;
+	if( dialogId == -1 ) return;
 
 	//ダイアログの作成
-	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditMapDialogProc );
+	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(dialogId), g_hWnd, (DLGPROC)EditMapDialogProc );
 
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgMap, IDC_COMBO_MAP );
@@ -3152,15 +3153,21 @@ void DisplayMapDialog()
 				int position = mapAttribute[g_EditMapData][Map[number].Atr];
 				if( position > 9000 ){
 					position = position - 10000;
-					if( position >= 0 ) sprintf( str, "+%d", position );
-					else sprintf( str, "%d", position );
-				} else {
-					sprintf( str, "%d", position );
+
+					CString jumpValue;
+					if (position >= 0) {
+						jumpValue.Format("+%d", position);
+					}
+					else {
+						jumpValue.Format("%d", position);
+					}
+					SetDlgItemText(g_hDlgMap, Map[number].Id, jumpValue);
 				}
-				SetDlgItemText( g_hDlgMap, Map[number].Id, str );
+				else {
+					SetDlgItemInt(g_hDlgMap, Map[number].Id, position, FALSE);
+				}
 			} else {
-				_itoa( mapAttribute[g_EditMapData][Map[number].Atr], str, 10 );
-				SetDlgItemText( g_hDlgMap, Map[number].Id, str );
+				SetDlgItemInt(g_hDlgMap, Map[number].Id, mapAttribute[g_EditMapData][Map[number].Atr], FALSE);
 			}
 		}
 	}
@@ -3988,29 +3995,19 @@ void MakeNewMap()
 // 基本設定ダイアログ
 void EditMapFoundation()
 {
-	char str[100];
 	DestroyWindow(g_hDlgFoundation);
 	g_hDlgFoundation = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_FOUNDATION), g_hWnd, (DLGPROC)DialogProc);
 
 	//数値データ挿入
-	_itoa(statusEnergyMax, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_ENERGYMAX, str);
-	_itoa(statusEnergy, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIENERGY, str);
-	_itoa(statusStrength, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INISTRENGTH, str);
-	_itoa(statusDefence, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIDEFENCE, str);
-	_itoa(statusGold, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIGOLD, str);
-	_itoa(charaX, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIX, str);
-	_itoa(charaY, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIY, str);
-	_itoa(gameoverXp, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_GVX, str);
-	_itoa(gameoverYp, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_GVY, str);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_ENERGYMAX, statusEnergyMax, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIENERGY, statusEnergy, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INISTRENGTH, statusStrength, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIDEFENCE, statusDefence, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIGOLD, statusGold, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIX, charaX, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIY, charaY, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_GVX, gameoverXp, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_GVY, gameoverYp, FALSE);
 
 	//テキストデータ挿入
 	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_WORLDNAME, g_worldName);
@@ -4027,12 +4024,21 @@ void EditMapFoundation()
 	SetDlgItemText(g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName);
 
 	//各種サイズデータ挿入
-	sprintf(str, "%d×%d", g_iMapSize, g_iMapSize);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, str);
-	sprintf(str, "%d", g_iMapPartsMax);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, str);
-	sprintf(str, "%d", g_iObjectPartsMax);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, str);
+	{
+		CString mapSizeStr;
+		mapSizeStr.Format("%d×%d", g_iMapSize, g_iMapSize);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, mapSizeStr);
+	}
+	{
+		CString mapPartsMaxStr;
+		mapPartsMaxStr.Format("%d", g_iMapPartsMax);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, mapPartsMaxStr);
+	}
+	{
+		CString objectPartsMaxStr;
+		objectPartsMaxStr.Format("%d", g_iObjectPartsMax);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, objectPartsMaxStr);
+	}
 }
 
 
