@@ -29,6 +29,7 @@
 #define IDD_DIALOG_ITEMCHECK            127
 #define IDD_DIALOG_EXTRA2               128
 #define IDD_DIALOG_OBJSELECT            129
+#define IDD_DIALOG_QVIEW                130
 #define IDD_DIALOG_LOCALGATE_OBJ        131
 #define IDD_DIALOG_BASICMES             132
 #define IDD_DIALOG1                     134
@@ -137,6 +138,7 @@
 #define IDC_EDIT_RANDOM9                1074
 #define IDC_EDIT_RANDOM10               1075
 #define IDC_BUTTON_CANCEL               1076
+#define IDC_EDIT_QVIEW                  1078
 #define ID_BUTTON_CANCEL                1080
 #define IDC_EDIT_BMES_GOLD              1082
 #define IDC_EDIT_BMES_ITEM              1083
@@ -157,6 +159,13 @@
 #define IDC_STATIC_PARTS_NUMBER         1098
 #define IDC_STATIC_CURRENT_POSITION     1101
 #define IDC_EDIT_CURRENT_POSITION       1102
+#define IDC_EDIT_PARTS_MESSAGE          1103
+#define IDC_PICTURE_PARTS_IMAGE         1104
+#define IDC_EDIT1                       1105
+#define IDC_PICTURE_QVIEW               1106
+#define IDC_STATIC_QVIEW                1107
+#define IDC_STATIC_QVIEW_NUMBER         1107
+#define IDC_STATIC_QVIEW_TYPE           1108
 #define ID_MENUITEM40001                40001
 #define ID_MENU_NEW                     40001
 #define ID_MENUITEM40002                40002
@@ -206,9 +215,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        136
+#define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         40040
-#define _APS_NEXT_CONTROL_VALUE         1103
+#define _APS_NEXT_CONTROL_VALUE         1109
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
