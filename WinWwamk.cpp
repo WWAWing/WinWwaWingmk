@@ -3693,7 +3693,7 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		else if (LOWORD(wParam) == IDC_BUTTON_MAP_PARTS) {
 			g_iMapPartsMax += 50;
 			if (g_iMapPartsMax > PARTS_NUMBER_MAX) g_iMapPartsMax = PARTS_NUMBER_MAX;
-			SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / 10) - 3), FALSE);
+			SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / DIALOG_MAP_SELECT_COLUMN) - DIALOG_MAP_SELECT_LINE), FALSE);
 			char szStr[50];
 			sprintf(szStr, "%d", g_iMapPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, szStr);
@@ -3702,7 +3702,7 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		else if (LOWORD(wParam) == IDC_BUTTON_OBJ_PARTS) {
 			g_iObjectPartsMax += 50;
 			if (g_iObjectPartsMax > PARTS_NUMBER_MAX) g_iObjectPartsMax = PARTS_NUMBER_MAX;
-			SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / 10) - 3), FALSE);
+			SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / DIALOG_OBJECT_SELECT_COLUMN) - DIALOG_OBJECT_SELECT_LINE), FALSE);
 			char szStr[50];
 			sprintf(szStr, "%d", g_iObjectPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, szStr);
