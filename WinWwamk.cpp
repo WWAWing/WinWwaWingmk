@@ -1022,7 +1022,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			setScreenChipSize++;
 			g_hugeMapSize = !g_hugeMapSize;
 			SizeX = (setScreenChipSize * CHIP_SIZE);
-			SizeY = ((setScreenChipSize + 1) * CHIP_SIZE);
+			SizeY = ((setScreenChipSize + 1) * CHIP_SIZE) + 15;
 			SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
 		}
 		// パーツのコピー
