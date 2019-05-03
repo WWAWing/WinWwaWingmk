@@ -129,8 +129,8 @@ int mapYtop = 0;
 int miniMapXtop = 0;
 int miniMapYtop = 0;
 
-const int miniMapWidth = 40;
-const int miniMapHeight = 20;
+const int miniMapWidth = 41;
+const int miniMapHeight = 21;
 
 //ステータス
 int statusEnergyMax;
@@ -784,8 +784,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_MOUSEWHEEL: {
 		int scrollLines;
-		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		const BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
 		if (parameterResult == FALSE) {
 			scrollLines = 1;
 		}
@@ -4035,8 +4035,10 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 	case WM_MOUSEWHEEL: {
 		int scrollSize;
-		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 		SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollSize, 0);
+		// スクロールサイズはスクロール行数の2倍の量
+		scrollSize *= 2;
 		// 横方向
 		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
 			if (scrollDelta < 0) {
