@@ -1130,7 +1130,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	MSG			msg;
 	WNDCLASS	wc;
 	g_hInst = hInst;
-	OSVERSIONINFO OsVersion;
 	RECT WindowRect, ClientRect;
 	int SizeX, SizeY, PositionX, PositionY;
 
@@ -3211,8 +3210,7 @@ void DisplayMapDialog()
 
 //##------------------------------------------------------------------
 // 物体データの決定
-
-void SetObjectData( HWND hWnd, int charaNumber )
+void SetObjectData(HWND hWnd, int charaNumber)
 {
 	int i;
 	int number;
@@ -3223,78 +3221,87 @@ void SetObjectData( HWND hWnd, int charaNumber )
 	int position;
 
 	//何も設定されていなければキャンセル
-	for( i = 0 ; i < OBJECT_ATR_MAX ; ++i ){
-		if( objectAttribute[charaNumber][i] != 0 ) break;
+	for (i = 0; i < OBJECT_ATR_MAX; ++i) {
+		if (objectAttribute[charaNumber][i] != 0) break;
 	}
-	if( i == OBJECT_ATR_MAX ) return;
+	if (i == OBJECT_ATR_MAX) return;
 
 	//パーツ番号
 	objectAttribute[charaNumber][ATR_0] = charaNumber;
 
-	if( (type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM) || (type == OBJECT_SCORE)
-				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) ){
+	if ((type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM) || (type == OBJECT_SCORE)
+		|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT)) {
 		//文字データのセット
-		GetDlgItemText( hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX );
-		SetMessageData( &objectAttribute[charaNumber][ATR_STRING], str );
-	} else if( type == OBJECT_URLGATE ){
-		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
-		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
-		if( strlen(strCut) != 0 ){
+		GetDlgItemText(hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX);
+		SetMessageData(&objectAttribute[charaNumber][ATR_STRING], str);
+	}
+	else if (type == OBJECT_URLGATE) {
+		GetDlgItemText(hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX);
+		GetDlgItemText(hWnd, IDC_EDIT_TARGET, strCut, 50);
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) {
+			strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
+		}
+		if (strlen(strCut) != 0) {
 			length = strlen(str);
 			str[length] = 0x0D;
-			str[length+1] = 0x0A;
-			str[length+2] = '\0';
-			strcat( str, strCut );
+			str[length + 1] = 0x0A;
+			str[length + 2] = '\0';
+			strcat_s(str, MESSAGE_STR_MAX, strCut);
 		}
-		SetMessageData( &objectAttribute[charaNumber][ATR_STRING], str );
+		SetMessageData(&objectAttribute[charaNumber][ATR_STRING], str);
 	}
 	//数値データを設定
-	for( number = 0 ; number < 100 ; ++number ){
-		if( Object[number].Object == END ) break;
-		if( Object[number].Object == type ){
-			GetDlgItemText( hWnd, Object[number].Id, str, sizeof(str) );
-			
+	for (number = 0; number < 100; ++number) {
+		if (Object[number].Object == END) break;
+		if (Object[number].Object == type) {
+			GetDlgItemText(hWnd, Object[number].Id, str, sizeof(str));
+
 			//マイナス数値の指定
-			if( ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_SELL))
-						|| ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_STRENGTH) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_DEFENCE) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS)) ){
-				if( (atoi(str) < 0) && (atoi(str) >= -30000) ){
+			if (((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_SELL))
+				|| ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_STRENGTH) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_DEFENCE) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS))) {
+				if ((atoi(str) < 0) && (atoi(str) >= -30000)) {
 					objectAttribute[charaNumber][Object[number].Atr] = 30000 - atoi(str);
 					continue;
-				} else if( atoi(str) < -30000 ){
+				}
+				else if (atoi(str) < -30000) {
 					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n -30000 以上を指定してください。", Object[number].Name);
-					MessageBox( g_hWnd, str, "警告！", MB_OK );
+					MessageBox(g_hWnd, str, "警告！", MB_OK);
 				}
 			}
-			if( (objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_SELL) && (Object[number].Atr == ATR_ITEM) ){
-				if( (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_ITEM) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_NORMAL) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_MESSAGE) ){
-					MessageBox( g_hWnd, "売るアイテムには、ステータス変化パーツなどのアイテム以外のパーツは指定できません。", "警告！", MB_OK );
+			if ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_SELL) && (Object[number].Atr == ATR_ITEM)) {
+				if ((objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_ITEM) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_NORMAL) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_MESSAGE)) {
+					MessageBox(g_hWnd, "売るアイテムには、ステータス変化パーツなどのアイテム以外のパーツは指定できません。", "警告！", MB_OK);
 					continue;
 				}
 			}
-			if( (objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE) && ((Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y)) ){
-				int position = atoi( str );
-				if( position >= g_iMapSize ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK );
-				} else if( (position < -100) || ((position > 100) && (str[0] == '+')) ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK );
-				} else {
-					if( (str[0] == '+') || (str[0] == '-') ) position += 10000;
+			if ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE) && ((Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y))) {
+				int position = atoi(str);
+				if (position >= g_iMapSize) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK);
+				}
+				else if ((position < -100) || ((position > 100) && (str[0] == '+'))) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK);
+				}
+				else {
+					if ((str[0] == '+') || (str[0] == '-')) position += 10000;
 					objectAttribute[charaNumber][Object[number].Atr] = position;
 				}
-			} else if( (Object[number].Max != 0) && ((Object[number].Max < atoi(str)) || (atoi(str) < 0)) ){
+			}
+			else if ((Object[number].Max != 0) && ((Object[number].Max < atoi(str)) || (atoi(str) < 0))) {
 				sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上 %d 以下を指定してください。", Object[number].Name, Object[number].Max);
-				MessageBox( g_hWnd, str, "警告！", MB_OK );
-			} else {
-				if( (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
-							|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER)) ){
+				MessageBox(g_hWnd, str, "警告！", MB_OK);
+			}
+			else {
+				if ((objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
+					|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER))) {
 					//コンボボックスのデータ
-					position = SendMessage( GetDlgItem(hWnd,Object[number].Id), CB_GETCURSEL, 0, 0 );
+					position = SendMessage(GetDlgItem(hWnd, Object[number].Id), CB_GETCURSEL, 0, 0);
 					objectAttribute[charaNumber][Object[number].Atr] = position;
-				} else {
+				}
+				else {
 					//エディットボックス
 					objectAttribute[charaNumber][Object[number].Atr] = atoi(str);
 				}
@@ -3307,7 +3314,6 @@ void SetObjectData( HWND hWnd, int charaNumber )
 
 //##------------------------------------------------------------------
 // 背景データの決定
-
 void SetMapData( HWND hWnd, int charaNumber )
 {
 	int i;
@@ -3326,46 +3332,51 @@ void SetMapData( HWND hWnd, int charaNumber )
 	//パーツ番号
 	mapAttribute[charaNumber][ATR_0] = charaNumber;
 
-	if( (type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK) ){
+	if ((type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK)) {
 		//文字データのセット
-		GetDlgItemText( hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX );
-		SetMessageData( &mapAttribute[charaNumber][ATR_STRING], str );
-	} else if( type == MAP_URLGATE ){
-		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
-		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
+		GetDlgItemText(hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX);
+		SetMessageData(&mapAttribute[charaNumber][ATR_STRING], str);
+	}
+	else if (type == MAP_URLGATE) {
+		GetDlgItemText(hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX);
+		GetDlgItemText(hWnd, IDC_EDIT_TARGET, strCut, 50);
 		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) {
 			strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
 		}
-		if( strlen(strCut) != 0 ){
+		if (strlen(strCut) != 0) {
 			length = strlen(str);
 			str[length] = 0x0D;
-			str[length+1] = 0x0A;
-			str[length+2] = '\0';
-			strcat( str, strCut );
+			str[length + 1] = 0x0A;
+			str[length + 2] = '\0';
+			strcat_s(str, MESSAGE_STR_MAX, strCut);
 		}
-		SetMessageData( &mapAttribute[charaNumber][ATR_STRING], str );
+		SetMessageData(&mapAttribute[charaNumber][ATR_STRING], str);
 	}
 	//数値データを設定
-	for( number = 0 ; number < 100 ; ++number ){
-		if( Map[number].Object == END ) break;
-		if( Map[number].Object == type ){
-			GetDlgItemText( hWnd, Map[number].Id, str, sizeof(str) );
-			if( (Map[number].Atr == ATR_JUMP_X) || (Map[number].Atr == ATR_JUMP_Y) ){
-				int position = atoi( str );
-				if( position >= g_iMapSize ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK );
-				} else if( (position < -100) || ((position > 100) && (str[0] == '+')) ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK );
-				} else {
-					if( (str[0] == '+') || (str[0] == '-') ) position += 10000;
+	for (number = 0; number < 100; ++number) {
+		if (Map[number].Object == END) break;
+		if (Map[number].Object == type) {
+			GetDlgItemText(hWnd, Map[number].Id, str, sizeof(str));
+			if ((Map[number].Atr == ATR_JUMP_X) || (Map[number].Atr == ATR_JUMP_Y)) {
+				int position = atoi(str);
+				if (position >= g_iMapSize) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK);
+				}
+				else if ((position < -100) || ((position > 100) && (str[0] == '+'))) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK);
+				}
+				else {
+					if ((str[0] == '+') || (str[0] == '-')) position += 10000;
 					mapAttribute[charaNumber][Map[number].Atr] = position;
 				}
-			} else {
-				if( (Map[number].Max != 0) && ((Map[number].Max < atoi(str)) || (atoi(str) < 0)) ){
+			}
+			else {
+				if ((Map[number].Max != 0) && ((Map[number].Max < atoi(str)) || (atoi(str) < 0))) {
 					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上、%d以下を指定してください。", Map[number].Name, Map[number].Max);
-					MessageBox( g_hWnd, str, "警告！", MB_OK );
-				} else {
-					mapAttribute[charaNumber][Map[number].Atr] = atoi( str );
+					MessageBox(g_hWnd, str, "警告！", MB_OK);
+				}
+				else {
+					mapAttribute[charaNumber][Map[number].Atr] = atoi(str);
 				}
 			}
 		}
@@ -3605,7 +3616,9 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				else if ((atol(g_worldPassword) < 1000) && (atol(g_worldPassword) > 0)) {
 					MessageBox(hWnd, "拡張クラスを使用しない場合や、ＣＧＩ によるステータス引継ぎをおこなわない場合は、\n保守のため暗証番号はなるべく４桁以上にしておくことをお勧めします。\n拡張クラスからの起動やステータス引継ぎができないようになります。", "推奨", MB_OK);
 				}
-				if (g_worldPassword[0] != '\0') ltoa(atol(g_worldPassword), g_worldPassword, 10);
+				if (g_worldPassword[0] != '\0') {
+					_ltoa_s(atol(g_worldPassword), g_worldPassword, 10);
+				}
 
 				GetDlgItemText(g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp, sizeof(g_mapcgNameBmp));
 				GetDlgItemText(g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName, sizeof(g_mapcgName));
