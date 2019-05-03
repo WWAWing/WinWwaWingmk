@@ -2711,24 +2711,24 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[g_SelectMapData][ATR_X], mapAttribute[g_SelectMapData][ATR_Y], SRCCOPY);
 			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
 			//文字表示
-			char str[50];
+			char str[BUFFER_STR_MAX];
 			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf(str, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData);
+			sprintf_s(str, BUFFER_STR_MAX, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData);
 			TextOut(hDC, 50, 5, str, strlen(str));
 			type = mapAttribute[g_SelectMapData][ATR_TYPE];
-			sprintf(str, "種類：%s ", g_MapName[type]);
+			sprintf_s(str, BUFFER_STR_MAX, "種類：%s ", g_MapName[type]);
 			TextOut(hDC, 50, 26, str, strlen(str));
 		}
 		else if (g_EditMode == 1) {
 			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[g_SelectObjectData][ATR_X], objectAttribute[g_SelectObjectData][ATR_Y], SRCCOPY);
 			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
 			//文字表示
-			char str[50];
+			char str[BUFFER_STR_MAX];
 			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf(str, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData);
+			sprintf_s(str, BUFFER_STR_MAX, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData);
 			TextOut(hDC, 50, 5, str, strlen(str));
 			type = objectAttribute[g_SelectObjectData][ATR_TYPE];
-			sprintf(str, "種類：%s ", g_ObjectName[type]);
+			sprintf_s(str, BUFFER_STR_MAX, "種類：%s ", g_ObjectName[type]);
 			TextOut(hDC, 50, 26, str, strlen(str));
 		}
 		ReleaseDC(hWnd, hDC);
