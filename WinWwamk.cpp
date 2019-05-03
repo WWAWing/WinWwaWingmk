@@ -395,7 +395,7 @@ const int g_EditId[] = {
 };
 
 #define MACRO_MB(x) MessageBox(NULL,x,"",MB_OK);
-#define MACRO_NUMBER(x) if(TRUE){char szNum[20];sprintf(szNum,"%d",x);MACRO_MB(szNum)};
+#define MACRO_NUMBER(x) if(TRUE) { char szNum[NUMBER_STR_MAX]; sprintf_s(szNum, NUMBER_STR_MAX, "%d", x); MACRO_MB(szNum) };
 
 
 
@@ -1451,16 +1451,16 @@ void PaintStatus(BOOL flag)
 {
 	// ステータス非表示
 	HDC hDC = GetDC(g_hWnd);
-	char str[100];
+	char str[BUFFER_STR_MAX];
 	int x;
 	const int y = 1;
 
 	SetBkMode(g_hmDCExtra, TRANSPARENT);
 	Rectangle(g_hmDCExtra, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, 20);
 
-	sprintf(str, "X=%2d ", g_MouseX / CHIP_SIZE + mapXtop);
+	sprintf_s(str, BUFFER_STR_MAX, "X=%2d ", g_MouseX / CHIP_SIZE + mapXtop);
 	TextOut(g_hmDCExtra, 4, 1, str, strlen(str));
-	sprintf(str, "Y=%2d ", g_MouseY / CHIP_SIZE + mapYtop);
+	sprintf_s(str, BUFFER_STR_MAX, "Y=%2d ", g_MouseY / CHIP_SIZE + mapYtop);
 	TextOut(g_hmDCExtra, 50, 1, str, strlen(str));
 
 	x = 96;
@@ -2082,7 +2082,7 @@ void saveMapString( char *str )
 	WCHAR buff[MESSAGE_STR_MAX];
 
 	if( strlen(str) != 0 ){
-		length = MultiByteToWideChar( CP_ACP, 0, str, strlen(str), buff, sizeof(buff) );
+		length = MultiByteToWideChar(CP_ACP, 0, str, strlen(str), buff, sizeof(buff) / 2);
 		buff[length] = '\0';
 		
 		for( i = 0 ; i < (int)wcslen(buff) ; ++i ){
@@ -2999,7 +2999,7 @@ void DisplayObjectDialog()
 		}
 		SetDlgItemText( g_hDlgObject, IDC_EDIT_URL, str );
 	}
-	//数値データを挿入
+	// 数値データを挿入
 	for( number = 0 ; number < 100 ; ++number ){
 		if( Object[number].Object == END ) break;
 		if( Object[number].Object == type ){
@@ -3013,7 +3013,7 @@ void DisplayObjectDialog()
 						|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS)) ){
 				if( status > 30000 ) status = 30000 -status;
 			}
-			//ジャンプゲートの場合
+			// ジャンプゲートの場合
 			if( objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE ){
 				if( (Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y) ){
 					int position = objectAttribute[g_EditObjectData][Object[number].Atr];
@@ -3037,50 +3037,53 @@ void DisplayObjectDialog()
 					SetDlgItemInt(g_hDlgObject, Object[number].Id, objectAttribute[g_EditObjectData][Object[number].Atr], FALSE);
 				}
 			}
-			//コンボボックスの場合
+			// コンボボックスの場合
 			else if( (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
 						|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER)) ){
 				hwndCombo = GetDlgItem( g_hDlgObject, Object[number].Id );
 				SendMessage( hwndCombo, CB_SETCURSEL, status, 0 );
 			}
-			//エディットボックスの場合
+			// エディットボックスの場合
 			else {
 				SetDlgItemInt(g_hDlgObject, Object[number].Id, status, TRUE);
 			}
 		}
 	}
-	//ダイアログ移動
+	// ダイアログ移動
 	GetWindowRect( g_hDlgSelectObject, &rectBox );
 	GetWindowRect( g_hDlgObject, &rect );
 	MoveWindow( g_hDlgObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgObject, SW_SHOW );
 
-	//ダイアログの作成
+	// ダイアログの作成
 	if( (type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM)
 				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) || (type == OBJECT_LOCALGATE) ){
 		if( type == OBJECT_SELECT ) g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA2), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
 		else g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
 
-		//ダイアログ移動
+		// ダイアログ移動
 		GetWindowRect( g_hDlgObject, &rectBox );
 		GetWindowRect( g_hDlgExtra, &rect );
 		MoveWindow( g_hDlgExtra, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgExtra, SW_SHOW );
 
-		//フォーカス移動
+		// フォーカス移動
 		SetFocus( g_hDlgObject );
-		//拡張出現キャラクタの設定
+		// 拡張出現キャラクタの設定
 		AppearChara( g_EditObjectData, TRUE );
 	}
 
-	//タイトルバーテキスト設定
-	char title[100];
-	GetWindowText( g_hDlgObject, title, sizeof(title) );
-	sprintf( str, "o%d.  %s", g_EditObjectData, title );
-	SetWindowText( g_hDlgObject, str );
-	GetWindowText( g_hDlgExtra, title, sizeof(title) );
-	sprintf( str, "o%d.  %s", g_EditObjectData, title );
-	SetWindowText( g_hDlgExtra, str );
+	// タイトルバーテキスト設定
+	{
+		char title[BUFFER_STR_MAX];
+		GetWindowText(g_hDlgObject, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "o%d.  %s", g_EditObjectData, title);
+		SetWindowText(g_hDlgObject, str);
+
+		GetWindowText(g_hDlgExtra, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "o%d.  %s", g_EditObjectData, title);
+		SetWindowText(g_hDlgExtra, str);
+	}
 }
 
 
@@ -3192,13 +3195,16 @@ void DisplayMapDialog()
 	}
 	
 	//タイトルバーテキスト設定
-	char title[100];
-	GetWindowText( g_hDlgMap, title, sizeof(title) );
-	sprintf( str, "m%d.  %s", g_EditMapData, title );
-	SetWindowText( g_hDlgMap, str );
-	GetWindowText( g_hDlgExtra, title, sizeof(title) );
-	sprintf( str, "m%d.  %s", g_EditMapData, title );
-	SetWindowText( g_hDlgExtra, str );
+	{
+		char title[BUFFER_STR_MAX];
+		GetWindowText(g_hDlgMap, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "m%d.  %s", g_EditMapData, title);
+		SetWindowText(g_hDlgMap, str);
+
+		GetWindowText(g_hDlgExtra, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "m%d.  %s", g_EditMapData, title);
+		SetWindowText(g_hDlgExtra, str);
+	}
 }
 
 
@@ -3259,7 +3265,7 @@ void SetObjectData( HWND hWnd, int charaNumber )
 					objectAttribute[charaNumber][Object[number].Atr] = 30000 - atoi(str);
 					continue;
 				} else if( atoi(str) < -30000 ){
-					sprintf( str, "「%s」の数値範囲が規定値を超えています。\n -30000 以上を指定してください。", Object[number].Name );
+					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n -30000 以上を指定してください。", Object[number].Name);
 					MessageBox( g_hWnd, str, "警告！", MB_OK );
 				}
 			}
@@ -3280,7 +3286,7 @@ void SetObjectData( HWND hWnd, int charaNumber )
 					objectAttribute[charaNumber][Object[number].Atr] = position;
 				}
 			} else if( (Object[number].Max != 0) && ((Object[number].Max < atoi(str)) || (atoi(str) < 0)) ){
-				sprintf( str, "「%s」の数値範囲が規定値を超えています。\n 0以上 %d 以下を指定してください。", Object[number].Name, Object[number].Max );
+				sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上 %d 以下を指定してください。", Object[number].Name, Object[number].Max);
 				MessageBox( g_hWnd, str, "警告！", MB_OK );
 			} else {
 				if( (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
@@ -3308,7 +3314,7 @@ void SetMapData( HWND hWnd, int charaNumber )
 	int number;
 	int length;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
+	char strCut[BUFFER_STR_MAX];
 	int type = mapAttribute[charaNumber][ATR_TYPE];
 
 	//何も設定されていなければキャンセル
@@ -3327,7 +3333,9 @@ void SetMapData( HWND hWnd, int charaNumber )
 	} else if( type == MAP_URLGATE ){
 		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
 		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) {
+			strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
+		}
 		if( strlen(strCut) != 0 ){
 			length = strlen(str);
 			str[length] = 0x0D;
@@ -3354,7 +3362,7 @@ void SetMapData( HWND hWnd, int charaNumber )
 				}
 			} else {
 				if( (Map[number].Max != 0) && ((Map[number].Max < atoi(str)) || (atoi(str) < 0)) ){
-					sprintf( str, "「%s」の数値範囲が規定値を超えています。\n 0以上、%d以下を指定してください。", Map[number].Name, Map[number].Max );
+					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上、%d以下を指定してください。", Map[number].Name, Map[number].Max);
 					MessageBox( g_hWnd, str, "警告！", MB_OK );
 				} else {
 					mapAttribute[charaNumber][Map[number].Atr] = atoi( str );
@@ -3375,7 +3383,7 @@ void AppearChara( int mapNumber, BOOL flag )
 	int dataChara;
 	int dataMode;
 	int x, y;
-	char str[30];
+	char str[NUMBER_STR_MAX];
 
 	//拡張キャラクタ・データコンバート
 	for( i = 0 ; i < 10 ; ++i ){
@@ -3412,12 +3420,12 @@ void AppearChara( int mapNumber, BOOL flag )
 			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], "P" );
 		} else if( x > 9000 ){
 			x -= 10000;
-			sprintf( str, "%d", x );
-			if( x >= 0 ) sprintf( str, "+%d", x );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", x);
+			if (x >= 0) sprintf_s(str, NUMBER_STR_MAX, "+%d", x);
 			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], str );
 		} else {
-			sprintf( str, "%d", x );
-			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], str );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", x);
+			SetDlgItemText(g_hDlgExtra, g_EditId[10 + i], str);
 		}
 		
 		//y = y >> 8;
@@ -3425,15 +3433,15 @@ void AppearChara( int mapNumber, BOOL flag )
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], "P" );
 		} else if( y > 9000 ){
 			y -= 10000;
-			sprintf( str, "%d", y );
-			if( y >= 0 ) sprintf( str, "+%d", y );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", y);
+			if (y >= 0) sprintf_s(str, NUMBER_STR_MAX, "+%d", y);
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], str );
 		} else {
-			sprintf( str, "%d", y );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", y);
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], str );
 		}
 		
-		sprintf( str, "%d", dataChara );
+		sprintf_s(str, NUMBER_STR_MAX, "%d", dataChara);
 		SetDlgItemText( g_hDlgExtra, g_EditId[i], str );
 	}
 }
@@ -3619,7 +3627,7 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			}
 			//戦闘結果の計算
 			else if (hWnd == g_hDlgCalculate) {
-				char str[50];
+				char str[NUMBER_STR_MAX];
 				int strength, defence, energy;
 				int strengthM, defenceM, energyM;
 				int damagy = 0;
@@ -3660,16 +3668,16 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 						}
 					}
 				}
-				if (turn == 0) sprintf(str, "攻撃ターン数　--");
-				else sprintf(str, "攻撃ターン数　%d", turn);
+				if (turn == 0) sprintf_s(str, NUMBER_STR_MAX, "攻撃ターン数　--");
+				else sprintf_s(str, NUMBER_STR_MAX, "攻撃ターン数　%d", turn);
 				SetDlgItemText(hWnd, IDC_STATIC_TURN, str);
-				sprintf(str, "プレーヤー　%d", damagy);
+				sprintf_s(str, NUMBER_STR_MAX, "プレーヤー　%d", damagy);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT1, str);
-				sprintf(str, "モンスター　%d", damagyM);
+				sprintf_s(str, NUMBER_STR_MAX, "モンスター　%d", damagyM);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT2, str);
-				sprintf(str, "プレーヤー　%d", attack);
+				sprintf_s(str, NUMBER_STR_MAX, "プレーヤー　%d", attack);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT3, str);
-				sprintf(str, "モンスター　%d", attackM);
+				sprintf_s(str, NUMBER_STR_MAX, "モンスター　%d", attackM);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT4, str);
 			}
 			return 1;
@@ -3680,10 +3688,10 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		// マップサイズ拡張
 		else if (LOWORD(wParam) == IDC_BUTTON_MAPSIZE) {
-			char szStr[50];
+			char szStr[NUMBER_STR_MAX];
 			g_iMapSize += 50;
 			if (g_iMapSize > MAP_SIZE_MAX) g_iMapSize = MAP_SIZE_MAX;
-			sprintf(szStr, "%d×%d", g_iMapSize, g_iMapSize);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d×%d", g_iMapSize, g_iMapSize);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, szStr);
 			// スクロールバー設定
 			SetScrollRange(g_hWnd, SB_VERT, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
@@ -3695,7 +3703,7 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if (g_iMapPartsMax > PARTS_NUMBER_MAX) g_iMapPartsMax = PARTS_NUMBER_MAX;
 			SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / DIALOG_MAP_SELECT_COLUMN) - DIALOG_MAP_SELECT_LINE), FALSE);
 			char szStr[50];
-			sprintf(szStr, "%d", g_iMapPartsMax);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d", g_iMapPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, szStr);
 		}
 		// 物体パーツ最大数拡張
@@ -3704,7 +3712,7 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if (g_iObjectPartsMax > PARTS_NUMBER_MAX) g_iObjectPartsMax = PARTS_NUMBER_MAX;
 			SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / DIALOG_OBJECT_SELECT_COLUMN) - DIALOG_OBJECT_SELECT_LINE), FALSE);
 			char szStr[50];
-			sprintf(szStr, "%d", g_iObjectPartsMax);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d", g_iObjectPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, szStr);
 		}
 		break;
@@ -3973,8 +3981,8 @@ void MakeNewMap()
 	g_mapcgOld[0] = '\0';
 	strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, "newmap.dat");
 	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf(sTitle, "%s [%s]", g_szTitleName, g_szSelectFile);
+	char sTitle[BUFFER_STR_MAX];
+	sprintf_s(sTitle, BUFFER_STR_MAX, "%s [%s]", g_szTitleName, g_szSelectFile);
 	SetWindowText(g_hWnd, sTitle);
 
 	//基本設定の編集
@@ -4276,7 +4284,7 @@ BOOL ReadGifImage()
 	int cxPerInch;
 	int cyPerInch;
 	long dx, dy;
-	char szStr[300];
+	char szStr[FILE_PATH_STR_MAX];
 
 	//初期化
 	g_iColorTp = 0;
@@ -4284,7 +4292,7 @@ BOOL ReadGifImage()
 
 	//画像ファイル読み込み
 	if ((han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE) {
-		sprintf(szStr, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
+		sprintf_s(szStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
 		MessageBox(g_hWnd, szStr, "注意", MB_OK);
 		g_bFileNotFound = TRUE;
 		return FALSE;
