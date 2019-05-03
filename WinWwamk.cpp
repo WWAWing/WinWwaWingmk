@@ -1303,14 +1303,11 @@ BOOL LoadBitmap()
 
 	// 画像メモリにGIF描画
 	g_bLoadGif = ReadGifImage();
+	if (g_bFileNotFound == TRUE) {
+		return FALSE;
+	}
 	// GIF読み込み失敗時
 	if (g_bLoadGif == FALSE) {
-		if (g_bFileNotFound == TRUE) {
-			char errorStr[FILE_PATH_STR_MAX];
-			sprintf_s(errorStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
-			MessageBox(g_hWnd, errorStr, "注意", MB_OK);
-			return FALSE;
-		}
 		strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 		if (g_pDib->ReadFile(g_mapcgNameBmp) == FALSE) {
 			MessageBox(g_hWnd, "このマップデータに対応する画像ファイル（256色BMPファイル）が読み込めません。\n「編集－基本設定の編集」で256色BMPファイルを指定してください。\n\nこのシステムでは、GIFファイルは直接読み込めないので、\n編集用に256色BMPファイルが必要になります。", "BMPファイル読み込み失敗", MB_OK);
@@ -1559,14 +1556,24 @@ BOOL LoadMapData(char* FileName)
 	DestroyWindow(g_hDlgSelectChara);
 
 	// データオープン
-	hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		MessageBox(g_hWnd, "マップデータファイルが読み込みできません。", "注意", MB_OK);
+	try
+	{
+		BOOL readResult;
+		hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+		if (hFile == INVALID_HANDLE_VALUE) {
+			throw "マップデータファイルが読込できません。";
+		}
+		readResult = ReadFile(hFile, LPVOID(&PressData), sizeof(PressData), &BytesRead, 0);
+		if (readResult == FALSE) {
+			throw "マップデータファイルが読込できません。";
+		}
+		CloseHandle(hFile);
+	}
+	catch (char* errorMessage)
+	{
+		MessageBox(g_hWnd, errorMessage, "注意", MB_OK);
 		return FALSE;
 	}
-	// データ読み込み
-	ReadFile(hFile, LPVOID(&PressData), sizeof(PressData), &BytesRead, 0);
-	CloseHandle(hFile);
 
 	// データ解凍
 	int i, j;
@@ -4311,23 +4318,34 @@ BOOL ReadGifImage()
 	g_bFileNotFound = FALSE;
 
 	//画像ファイル読み込み
-	han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (han == INVALID_HANDLE_VALUE) {
-		g_bFileNotFound = TRUE;
-		return FALSE;
-	}
-	siz = GetFileSize(han, NULL);
-	hgb = GlobalAlloc(GPTR, siz);
-	BOOL readResult = ReadFile(han, hgb, siz, &dw, NULL);
-	if (readResult == FALSE) {
-		return FALSE;
-	}
-	CloseHandle(han);
+	try {
+		han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (han == INVALID_HANDLE_VALUE) {
+			throw TRUE;
+		}
+		siz = GetFileSize(han, NULL);
+		hgb = GlobalAlloc(GPTR, siz);
+		BOOL readResult = ReadFile(han, hgb, siz, &dw, NULL);
+		if (readResult == FALSE) {
+			throw FALSE;
+		}
+		CloseHandle(han);
 
-	//ストリームを作成
-	HRESULT streamResult;
-	streamResult = CreateStreamOnHGlobal(hgb, TRUE, &ist);
-	if (streamResult == E_INVALIDARG || streamResult == E_OUTOFMEMORY) {
+		//ストリームを作成
+		HRESULT streamResult;
+		streamResult = CreateStreamOnHGlobal(hgb, TRUE, &ist);
+		if (streamResult == E_INVALIDARG || streamResult == E_OUTOFMEMORY) {
+			throw FALSE;
+		}
+	}
+	// 画像データの読込に失敗した場合
+	catch (BOOL fileNotFound)
+	{
+		g_bFileNotFound = fileNotFound;
+
+		char errorStr[FILE_PATH_STR_MAX];
+		sprintf_s(errorStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
+		MessageBox(g_hWnd, errorStr, "注意", MB_OK);
 		return FALSE;
 	}
 
