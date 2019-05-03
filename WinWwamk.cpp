@@ -1127,7 +1127,6 @@ void DeleteCheckMenu()
 // ＷＷＡ作成ツール
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int CmdShow)
 {
-	MSG			msg;
 	WNDCLASS	wc;
 	g_hInst = hInst;
 	RECT WindowRect, ClientRect;
@@ -1169,6 +1168,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	if (g_hWnd != NULL) {
 		ShowWindow(g_hWnd, CmdShow);
 		UpdateWindow(g_hWnd);
+	}
+	else {
+		return FALSE;
 	}
 
 	// 初期ファイル名設定
@@ -1240,6 +1242,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// 初期化完了
 	g_bInitial = TRUE;
 
+	MSG	msg;
 	if (g_hWnd != NULL) {
 		while (GetMessage(&msg, NULL, 0, 0)) {
 			// ダイアログメッセージ
@@ -1300,9 +1303,14 @@ BOOL LoadBitmap()
 
 	// 画像メモリにGIF描画
 	g_bLoadGif = ReadGifImage();
-	if (g_bFileNotFound == TRUE) return FALSE;
 	// GIF読み込み失敗時
 	if (g_bLoadGif == FALSE) {
+		if (g_bFileNotFound == TRUE) {
+			char errorStr[FILE_PATH_STR_MAX];
+			sprintf_s(errorStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
+			MessageBox(g_hWnd, errorStr, "注意", MB_OK);
+			return FALSE;
+		}
 		strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 		if (g_pDib->ReadFile(g_mapcgNameBmp) == FALSE) {
 			MessageBox(g_hWnd, "このマップデータに対応する画像ファイル（256色BMPファイル）が読み込めません。\n「編集－基本設定の編集」で256色BMPファイルを指定してください。\n\nこのシステムでは、GIFファイルは直接読み込めないので、\n編集用に256色BMPファイルが必要になります。", "BMPファイル読み込み失敗", MB_OK);
@@ -4297,25 +4305,32 @@ BOOL ReadGifImage()
 	int cxPerInch;
 	int cyPerInch;
 	long dx, dy;
-	char szStr[FILE_PATH_STR_MAX];
 
 	//初期化
 	g_iColorTp = 0;
 	g_bFileNotFound = FALSE;
 
 	//画像ファイル読み込み
-	if ((han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE) {
-		sprintf_s(szStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
-		MessageBox(g_hWnd, szStr, "注意", MB_OK);
+	han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (han == INVALID_HANDLE_VALUE) {
 		g_bFileNotFound = TRUE;
 		return FALSE;
 	}
 	siz = GetFileSize(han, NULL);
 	hgb = GlobalAlloc(GPTR, siz);
-	ReadFile(han, hgb, siz, &dw, NULL);
+	BOOL readResult = ReadFile(han, hgb, siz, &dw, NULL);
+	if (readResult == FALSE) {
+		return FALSE;
+	}
 	CloseHandle(han);
+
 	//ストリームを作成
-	CreateStreamOnHGlobal(hgb, TRUE, &ist);
+	HRESULT streamResult;
+	streamResult = CreateStreamOnHGlobal(hgb, TRUE, &ist);
+	if (streamResult == E_INVALIDARG || streamResult == E_OUTOFMEMORY) {
+		return FALSE;
+	}
+
 	//イメージをロード
 	OleLoadPicture(ist, siz, TRUE, IID_IPicture, (LPVOID*)& ipi);
 
