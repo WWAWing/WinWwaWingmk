@@ -475,13 +475,13 @@ FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "決定",IDOK,30,210,50,14
     PUSHBUTTON      "取り消し",IDCANCEL,81,210,50,14
-    LTEXT           "ワールド名",IDC_STATIC,31,4,32,8
+    LTEXT           "ワールド名",IDC_STATIC,31,7,32,8
     EDITTEXT        IDC_EDIT_WORLDNAME,66,4,75,14
     LTEXT           "GIF画像ファイル名",IDC_STATIC,8,24,55,8
     EDITTEXT        IDC_COMBO_GIF,66,21,75,14
-    LTEXT           "BMP画像ファイル名",IDC_STATIC_BMP,5,56,58,8
+    LTEXT           "BMP画像ファイル名",IDC_STATIC_BMP,5,58,58,8
     EDITTEXT        IDC_COMBO_BMP,66,55,75,14
-    LTEXT           "暗証番号（ID番号）",IDC_STATIC,9,40,55,8
+    LTEXT           "暗証番号（ID番号）",IDC_STATIC,9,41,55,8
     EDITTEXT        IDC_EDIT_PASSWORD,66,38,40,14,ES_AUTOHSCROLL
     LTEXT           "プレイヤー初期X座標",IDC_STATIC,7,91,64,8
     LTEXT           "プレイヤー初期Y座標",IDC_STATIC,7,107,64,8
