@@ -96,6 +96,7 @@
 #define SCREEN_CHIP_SIZE	11
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
+#define MINIMAP_SIZE_DIVIDE	4
 
 // パーツ選択ダイアログで表示するパーツ行数 (リソースファイルの変更も忘れずに)
 #define DIALOG_OBJECT_SELECT_LINE	4
@@ -201,19 +202,23 @@ HWND	g_hDlgBasicMes = NULL;
 HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
-HDC		g_hmDCMini = NULL;
-HDC		g_hmDCMiniMap = NULL;
 HDC		g_hmDCAnd = NULL;
 HDC		g_hmDCOr = NULL;
 HDC		g_hmDCExtra = NULL;
+HDC		g_hmDCMini = NULL;
+HDC		g_hmDCMiniAnd = NULL;
+HDC		g_hmDCMiniOr = NULL;
+HDC		g_hmDCMiniMap = NULL;
 HBITMAP	g_hBitmap = NULL;
 HBITMAP	g_hBitmapHalf = NULL;
-HBITMAP g_hBitmapMini = NULL;
-HBITMAP g_hBitmapMiniMap = NULL;
 HBITMAP	g_hBitmapGif = NULL;
 HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
 HBITMAP	g_hBitmapExtra = NULL;
+HBITMAP g_hBitmapMini = NULL;
+HBITMAP g_hBitmapMiniAnd = NULL;
+HBITMAP g_hBitmapMiniOr = NULL;
+HBITMAP g_hBitmapMiniMap = NULL;
 
 TRACKMOUSEEVENT g_MapEditTracking;
 TRACKMOUSEEVENT g_MiniMapTracking;
@@ -1343,10 +1348,12 @@ BOOL LoadBitmap()
 	if (g_hmDC == NULL) {
 		g_hmDC = CreateCompatibleDC(hDC);
 		g_hmDCHalf = CreateCompatibleDC(hDC);
-		g_hmDCMini = CreateCompatibleDC(hDC);
-		g_hmDCMiniMap = CreateCompatibleDC(hDC);
 		g_hmDCAnd = CreateCompatibleDC(hDC);
 		g_hmDCOr = CreateCompatibleDC(hDC);
+		g_hmDCMini = CreateCompatibleDC(hDC);
+		g_hmDCMiniAnd = CreateCompatibleDC(hDC);
+		g_hmDCMiniOr = CreateCompatibleDC(hDC);
+		g_hmDCMiniMap = CreateCompatibleDC(hDC);
 
 		g_hmDCExtra = CreateCompatibleDC(hDC);
 		g_hBitmapExtra = CreateCompatibleBitmap(hDC, CHIP_SIZE * SCREEN_CHIP_SIZE, 20);
@@ -1395,14 +1402,6 @@ BOOL LoadBitmap()
 	// １／２サイズのＣＧを描画$$
 	StretchBlt(g_hmDCHalf, 0, 0, 200, (g_iLoadCGHeight / 2), g_hmDC, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, SRCCOPY);
 
-	// ミニマップサイズのCG領域確保
-	if (g_hBitmapMini != NULL) {
-		DeleteObject(g_hBitmapMini);
-	}
-	g_hBitmapMini = CreateCompatibleBitmap(hDC, 100, (g_iLoadCGHeight / 4));
-	SelectObject(g_hmDCMini, g_hBitmapMini);
-	StretchBlt(g_hmDCMini, 0, 0, 100, (g_iLoadCGHeight / 4), g_hmDC, 0, 0, 400, g_iLoadCGHeight, SRCCOPY);
-
 	// AND画像領域確保
 	if (g_hBitmapAnd != NULL) DeleteObject(g_hBitmapAnd);
 	g_hBitmapAnd = CreateBitmap(CHIP_SIZE * 10, g_iLoadCGHeight, 1, 1, NULL);
@@ -1411,6 +1410,7 @@ BOOL LoadBitmap()
 	if (g_iColorTp == 0) g_iColorTp = GetPixel(g_hmDC, 60, 20);
 	SetBkColor(g_hmDC, g_iColorTp);
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, g_hmDC, 0, 0, SRCCOPY);
+
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
 	// OR画像領域確保
@@ -1422,6 +1422,21 @@ BOOL LoadBitmap()
 	BitBlt(g_hmDCOr, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, g_hmDCAnd, 0, 0, SRCAND);
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
+
+	// ミニマップのCG領域確保
+	HDC* miniMapHDCs[] = { &g_hmDCMini, &g_hmDCMiniAnd, &g_hmDCMiniOr };
+	HDC* baseHDCs[] = { &g_hmDC, &g_hmDCAnd, &g_hmDCOr };
+	HBITMAP* miniMapBitmaps[] = { &g_hBitmapMini, &g_hBitmapMiniAnd, &g_hBitmapMiniOr };
+	for (int i = 0; i < 3; i++) {
+		if (*miniMapBitmaps[i] != NULL) {
+			DeleteObject(*miniMapBitmaps[i]);
+		}
+		const int imageWidth = CHIP_SIZE * 10 / MINIMAP_SIZE_DIVIDE;
+		const int imageHeight = g_iLoadCGHeight / MINIMAP_SIZE_DIVIDE;
+		*miniMapBitmaps[i] = CreateCompatibleBitmap(hDC, imageWidth, imageHeight);
+		SelectObject(*miniMapHDCs[i], *miniMapBitmaps[i]);
+		StretchBlt(*miniMapHDCs[i], 0, 0, imageWidth, imageHeight, *baseHDCs[i], 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, SRCCOPY);
+	}
 
 	// デバイス解放
 	ReleaseDC(g_hWnd, hDC);
@@ -1568,8 +1583,11 @@ void CreateMiniMap()
 		for (x = 0; x < g_iMapSize; x++) {
 			mapNumber = map[y][x];
 			BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, mapAttribute[mapNumber][ATR_X] / 4, mapAttribute[mapNumber][ATR_Y] / 4, SRCCOPY);
-			// objNumber = mapObject[y][x];
-			// BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, objectAttribute[objNumber][ATR_X] / 4, mapAttribute[objNumber][ATR_Y] / 4, SRCCOPY);
+			objNumber = mapObject[y][x];
+			if (objNumber != 0) {
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniAnd, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCAND);
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniOr, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCPAINT);
+			}
 		}
 	}
 }
