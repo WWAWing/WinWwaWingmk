@@ -161,9 +161,8 @@
 #define IDC_EDIT_CURRENT_POSITION       1102
 #define IDC_EDIT_PARTS_MESSAGE          1103
 #define IDC_PICTURE_PARTS_IMAGE         1104
-#define IDC_EDIT1                       1105
+#define IDC_STATIC_NUMBER               1105
 #define IDC_PICTURE_QVIEW               1106
-#define IDC_STATIC_QVIEW                1107
 #define IDC_STATIC_QVIEW_NUMBER         1107
 #define IDC_STATIC_QVIEW_TYPE           1108
 #define ID_MENUITEM40001                40001
