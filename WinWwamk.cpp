@@ -102,6 +102,7 @@
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
 #define MINIMAP_SIZE_DIVIDE	4
+#define MINIMAP_CHIP_SIZE	CHIP_SIZE / MINIMAP_SIZE_DIVIDE
 
 // パーツ選択ダイアログで表示するパーツ行数 (リソースファイルの変更も忘れずに)
 #define DIALOG_OBJECT_SELECT_LINE	4
@@ -1607,7 +1608,7 @@ void CreateMiniMap()
 
 void PaintMiniMap(HWND hWnd)
 {
-	int i, j, mdata;
+	int i;
 	HDC hDC;
 	PAINTSTRUCT ps;
 	HPEN screenPen, currentPen;
@@ -2918,6 +2919,7 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		char* partsMessageString;
 		int* partsNumber;
 		char* partsTypeString;
+		CString partsCaptionString;
 
 		if (g_EditMode == 0) {
 			partsImageX = &mapAttribute[g_SelectMapData][ATR_X];
@@ -2925,6 +2927,7 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			partsMessageString = g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]];
 			partsNumber = &g_SelectMapData;
 			partsTypeString = g_MapName[mapAttribute[g_SelectMapData][ATR_TYPE]];
+			partsCaptionString = "背景パーツ";
 		}
 		else {
 			partsImageX = &objectAttribute[g_SelectObjectData][ATR_X];
@@ -2932,6 +2935,7 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			partsMessageString = g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]];
 			partsNumber = &g_SelectObjectData;
 			partsTypeString = g_ObjectName[objectAttribute[g_SelectObjectData][ATR_TYPE]];
+			partsCaptionString = "物体パーツ";
 		}
 
 		{
@@ -2943,7 +2947,7 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		// パーツ番号
 		CString partsNumberText;
-		partsNumberText.Format("背景パーツ %4d番", *partsNumber);
+		partsNumberText.Format("%s %4d番", partsCaptionString.GetString(), *partsNumber);
 		SetDlgItemText(g_hDlgQuickView, IDC_STATIC_QVIEW_NUMBER, partsNumberText);
 
 		// 種類
@@ -4159,8 +4163,17 @@ LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 // クリック座標からマップの位置を移動
 void JumpMapFromMiniMap(HWND hWnd, int mouseX, int mouseY) {
-	const int x = floor(mouseX / 10) + miniMapXtop;
-	const int y = floor(mouseY / 10) + miniMapYtop;
+	int x = miniMapXtop;
+	int y = miniMapYtop;
+	// 座標をミニマップ座標単位で計算 (そのまま割ることは用途上適していないため)
+	{
+		for (int mouseXStock = mouseX; mouseXStock > 0; mouseXStock -= MINIMAP_CHIP_SIZE) {
+			x++;
+		}
+		for (int mouseYStock = mouseY; mouseYStock > 0; mouseYStock -= MINIMAP_CHIP_SIZE) {
+			y++;
+		}
+	}
 
 	mapXtop = x - 5;
 	mapYtop = y - 5;
