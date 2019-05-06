@@ -1037,12 +1037,14 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		// マップウィンドウの拡大縮小
 		else if (LOWORD(wParam) == ID_MENU_CHANGEWINDOWSIZE) {
+			RECT WindowRect, ClientRect;
 			int SizeX, SizeY;
 			int setScreenChipSize = g_hugeMapSize ? DEFALUT_SCREEN_CHIP_SIZE : SCREEN_CHIP_SIZE;
-			setScreenChipSize++;
 			g_hugeMapSize = !g_hugeMapSize;
-			SizeX = (setScreenChipSize * CHIP_SIZE);
-			SizeY = ((setScreenChipSize + 1) * CHIP_SIZE) + 15;
+			GetWindowRect(g_hWnd, &WindowRect);
+			GetClientRect(g_hWnd, &ClientRect);
+			SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (setScreenChipSize * CHIP_SIZE);
+			SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (setScreenChipSize * CHIP_SIZE) + 20;
 			SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
 			// 物体・背景選択パーツウィンドウ位置のリセット
 			resetSelectMapAndObjectPosition();
