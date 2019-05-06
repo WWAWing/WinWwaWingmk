@@ -1184,7 +1184,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// 設定ファイル読み込み
 	PositionX = GetPrivateProfileInt("Main", "PositionX", CW_USEDEFAULT, g_szSettingFile);
 	PositionY = GetPrivateProfileInt("Main", "PositionY", 0, g_szSettingFile);
-	int window_size = SCREEN_CHIP_SIZE * CHIP_SIZE;
 
 	// メインウィンドウ作成
 	g_hWnd = CreateWindow("WWAMK", "WWA Wingマップ作成ツール",
