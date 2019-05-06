@@ -3534,16 +3534,18 @@ void SetAppearChara( int mapNumber, BOOL flag )
 			MessageBox( g_hWnd, "出現パーツ指定の「Ｙ座標」の数値範囲が規定値を超えています。\nマップサイズ以下で指定してください。", "警告！", MB_OK );
 		} else if( (y < -100) || ((str[0] == '+') && (y > 100)) ){
 			MessageBox( g_hWnd, "出現パーツ指定の「相対Ｙ座標」の数値範囲が規定値を超えています。\n -100 から +100 までで指定してください。", "警告！", MB_OK );
-		} else {
-			if( (str[0] == '+') || (str[0] == '-') ) y += 10000;
-			else if( (str[0] == 'p') || (str[0] == 'P') ) y = 9000;
-			else if( (str[0] == '\0') && (partsNumberStr[0] != '\0') ) y = 10000;
-			
+		}
+		else {
+			if ((str[0] == '+') || (str[0] == '-')) y += 10000;
+			else if ((str[0] == 'p') || (str[0] == 'P')) y = 9000;
+			else if ((str[0] == '\0') && (partsNumberStr[0] != '\0')) y = 10000;
+
 			//y = y << 8;
-			if( flag == TRUE ){
-				objectAttribute[mapNumber][20+i*4+2] = y;
-			} else {
-				mapAttribute[mapNumber][20+i*4+2] = y;
+			if (flag == TRUE) {
+				objectAttribute[mapNumber][20 + i * 4 + 2] = y;
+			}
+			else {
+				mapAttribute[mapNumber][20 + i * 4 + 2] = y;
 			}
 		}
 	}
@@ -3866,6 +3868,7 @@ LRESULT CALLBACK DialogProcExtraObject(HWND hWnd, UINT message, WPARAM wParam, L
 		}
 		if (wParam == IDOK) {
 			DestroyWindow(g_hDlgObject);
+			return 1;
 		}
 		break;
 	}
@@ -3905,6 +3908,7 @@ LRESULT CALLBACK DialogProcExtraMap(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		if (wParam == IDOK) {
 			DestroyWindow(g_hDlgMap);
+			return 1;
 		}
 		break;
 	}
