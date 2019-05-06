@@ -756,7 +756,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_VSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
+			if (mapYtop < g_iMapSize - nowScreenSize) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -772,7 +772,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapYtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapYtop += 5;
+			if (mapYtop <= g_iMapSize - (nowScreenSize + 5)) mapYtop += 5;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -794,8 +794,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
 			if (scrollDelta < 0) {
 				mapXtop += scrollLines;
-				if (mapXtop > g_iMapSize - SCREEN_CHIP_SIZE) {
-					mapXtop = g_iMapSize - SCREEN_CHIP_SIZE;
+				if (mapXtop > g_iMapSize - nowScreenSize) {
+					mapXtop = g_iMapSize - nowScreenSize;
 				}
 			}
 			else if (scrollDelta > 0) {
@@ -810,8 +810,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		else {
 			if (scrollDelta < 0) {
 				mapYtop += scrollLines;
-				if (mapYtop > g_iMapSize - SCREEN_CHIP_SIZE) {
-					mapYtop = g_iMapSize - SCREEN_CHIP_SIZE;
+				if (mapYtop > g_iMapSize - nowScreenSize) {
+					mapYtop = g_iMapSize - nowScreenSize;
 				}
 			}
 			else if (scrollDelta > 0) {
@@ -828,7 +828,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_HSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
+			if (mapXtop < g_iMapSize - nowScreenSize) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -844,7 +844,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapXtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapXtop += 5;
+			if (mapXtop <= g_iMapSize - (nowScreenSize + 5)) mapXtop += 5;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
