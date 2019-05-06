@@ -523,12 +523,13 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	int i, j;
 	int x, y, x2, y2;
 	int result;
+	int nowScreenSize = g_hugeMapSize ? SCREEN_CHIP_SIZE: DEFALUT_SCREEN_CHIP_SIZE;
 
 	switch (message) {
 		//カーソルキー入力
 	case WM_KEYDOWN: {
 		if (LOWORD(wParam) == VK_DOWN) {
-			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
+			if (mapYtop < g_iMapSize - nowScreenSize) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
@@ -538,7 +539,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_RIGHT) {
-			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
+			if (mapXtop < g_iMapSize - nowScreenSize) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
