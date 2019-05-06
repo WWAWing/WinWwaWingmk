@@ -529,21 +529,25 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_UP) {
 			if (mapYtop > 0) --mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_RIGHT) {
 			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_LEFT) {
 			if (mapXtop > 0) --mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 	}
