@@ -503,6 +503,18 @@ void resetSelectMapAndObjectPosition() {
 	ShowWindow(g_hDlgQuickView, SW_SHOW);
 }
 
+// メインウィンドウサイズの変更
+// width, hight共にパーツ単位の指定
+void changeMainWindowSize(int width, int hight) {
+	RECT WindowRect, ClientRect;
+	int SizeX, SizeY;
+	GetWindowRect(g_hWnd, &WindowRect);
+	GetClientRect(g_hWnd, &ClientRect);
+	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (width * CHIP_SIZE);
+	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (hight * CHIP_SIZE) + 20;
+	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+}
+
 //##------------------------------------------------------------------
 // イベント処理
 
@@ -1037,15 +1049,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		// マップウィンドウの拡大縮小
 		else if (LOWORD(wParam) == ID_MENU_CHANGEWINDOWSIZE) {
-			RECT WindowRect, ClientRect;
-			int SizeX, SizeY;
 			int setScreenChipSize = g_hugeMapSize ? DEFALUT_SCREEN_CHIP_SIZE : SCREEN_CHIP_SIZE;
 			g_hugeMapSize = !g_hugeMapSize;
-			GetWindowRect(g_hWnd, &WindowRect);
-			GetClientRect(g_hWnd, &ClientRect);
-			SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (setScreenChipSize * CHIP_SIZE);
-			SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (setScreenChipSize * CHIP_SIZE) + 20;
-			SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+			changeMainWindowSize(setScreenChipSize, setScreenChipSize);
 			// 物体・背景選択パーツウィンドウ位置のリセット
 			resetSelectMapAndObjectPosition();
 		}
@@ -1193,11 +1199,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		NULL, NULL, hInst, NULL);
 
 	// サイズ変更
-	GetWindowRect(g_hWnd, &WindowRect);
-	GetClientRect(g_hWnd, &ClientRect);
-	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (DEFALUT_SCREEN_CHIP_SIZE * CHIP_SIZE);
-	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (DEFALUT_SCREEN_CHIP_SIZE * CHIP_SIZE) + 20;
-	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+	changeMainWindowSize(DEFALUT_SCREEN_CHIP_SIZE, DEFALUT_SCREEN_CHIP_SIZE);
 
 	if (g_hWnd != NULL) {
 		ShowWindow(g_hWnd, CmdShow);
