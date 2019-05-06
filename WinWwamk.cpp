@@ -93,7 +93,8 @@
 #define OBJECT_ATR_MAX		60
 
 // 1画面の1辺のチップサイズ
-#define SCREEN_CHIP_SIZE	11
+#define SCREEN_CHIP_SIZE	21
+#define DEFALUT_SCREEN_CHIP_SIZE 11
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
 
@@ -220,6 +221,8 @@ BOOL g_bInitial = FALSE;		//初期化済みか？
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
+
+BOOL g_hugeMapSize = FALSE; // MapSizeが21 * 21か？
 
 char g_MapData[FILE_DATA_MAX];
 char PressData[FILE_DATA_MAX];
@@ -479,6 +482,38 @@ void RestoreUndoData();
 // GIF画像の読み込み
 BOOL ReadGifImage();
 
+void resetSelectMapAndObjectPosition() {
+	RECT rect;
+	RECT rectBox;
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgSelectObject, &rect);
+	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	GetWindowRect(g_hDlgSelectObject, &rectBox);
+	GetWindowRect(g_hDlgSelectMap, &rect);
+	MoveWindow(g_hDlgSelectMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgSelectMap, SW_SHOW);
+	ShowWindow(g_hDlgSelectObject, SW_SHOW);
+
+	// クイックビュー
+	DestroyWindow(g_hDlgQuickView);
+	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgQuickView, &rect);
+	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgQuickView, SW_SHOW);
+}
+
+// メインウィンドウサイズの変更
+// width, hight共にパーツ単位の指定
+void changeMainWindowSize(int width, int hight) {
+	RECT WindowRect, ClientRect;
+	int SizeX, SizeY;
+	GetWindowRect(g_hWnd, &WindowRect);
+	GetClientRect(g_hWnd, &ClientRect);
+	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + (width * CHIP_SIZE);
+	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + (hight * CHIP_SIZE) + 20;
+	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+}
 
 //##------------------------------------------------------------------
 // イベント処理
@@ -488,12 +523,13 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	int i, j;
 	int x, y, x2, y2;
 	int result;
+	int nowScreenSize = g_hugeMapSize ? SCREEN_CHIP_SIZE: DEFALUT_SCREEN_CHIP_SIZE;
 
 	switch (message) {
 		//カーソルキー入力
 	case WM_KEYDOWN: {
 		if (LOWORD(wParam) == VK_DOWN) {
-			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
+			if (mapYtop < g_iMapSize - nowScreenSize) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
@@ -503,7 +539,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_RIGHT) {
-			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
+			if (mapXtop < g_iMapSize - nowScreenSize) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
@@ -720,7 +756,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_VSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
+			if (mapYtop < g_iMapSize - nowScreenSize) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -736,7 +772,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapYtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapYtop += 5;
+			if (mapYtop <= g_iMapSize - (nowScreenSize + 5)) mapYtop += 5;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -758,8 +794,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
 			if (scrollDelta < 0) {
 				mapXtop += scrollLines;
-				if (mapXtop > g_iMapSize - SCREEN_CHIP_SIZE) {
-					mapXtop = g_iMapSize - SCREEN_CHIP_SIZE;
+				if (mapXtop > g_iMapSize - nowScreenSize) {
+					mapXtop = g_iMapSize - nowScreenSize;
 				}
 			}
 			else if (scrollDelta > 0) {
@@ -774,8 +810,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		else {
 			if (scrollDelta < 0) {
 				mapYtop += scrollLines;
-				if (mapYtop > g_iMapSize - SCREEN_CHIP_SIZE) {
-					mapYtop = g_iMapSize - SCREEN_CHIP_SIZE;
+				if (mapYtop > g_iMapSize - nowScreenSize) {
+					mapYtop = g_iMapSize - nowScreenSize;
 				}
 			}
 			else if (scrollDelta > 0) {
@@ -792,7 +828,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
 	case WM_HSCROLL:
 		if (LOWORD(wParam) == SB_LINEDOWN) {
-			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
+			if (mapXtop < g_iMapSize - nowScreenSize) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_LINEUP) {
@@ -808,7 +844,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEDOWN) {
-			if (mapXtop <= g_iMapSize - (SCREEN_CHIP_SIZE + 5)) mapXtop += 5;
+			if (mapXtop <= g_iMapSize - (nowScreenSize + 5)) mapXtop += 5;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		else if (LOWORD(wParam) == SB_PAGEUP) {
@@ -1012,6 +1048,14 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectMap, TRUE);
 			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED);
 		}
+		// マップウィンドウの拡大縮小
+		else if (LOWORD(wParam) == ID_MENU_CHANGEWINDOWSIZE) {
+			int setScreenChipSize = g_hugeMapSize ? DEFALUT_SCREEN_CHIP_SIZE : SCREEN_CHIP_SIZE;
+			g_hugeMapSize = !g_hugeMapSize;
+			changeMainWindowSize(setScreenChipSize, setScreenChipSize);
+			// 物体・背景選択パーツウィンドウ位置のリセット
+			resetSelectMapAndObjectPosition();
+		}
 		// パーツのコピー
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
 			if (g_EditMode == 0) {
@@ -1057,8 +1101,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		// マップ画面ごとコピー
 		else if (LOWORD(wParam) == ID_MENU_MAPCOPY) {
-			for (x = 0; x < SCREEN_CHIP_SIZE; ++x) {
-				for (y = 0; y < SCREEN_CHIP_SIZE; ++y) {
+		int nowScreenChipSize = g_hugeMapSize ? SCREEN_CHIP_SIZE : DEFALUT_SCREEN_CHIP_SIZE;
+			for (x = 0; x < nowScreenChipSize; ++x) {
+				for (y = 0; y < nowScreenChipSize; ++y) {
 					g_MapBuffer[y][x] = map[mapYtop + y][mapXtop + x];
 					g_ObjectBuffer[y][x] = mapObject[mapYtop + y][mapXtop + x];
 				}
@@ -1067,8 +1112,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		else if (LOWORD(wParam) == ID_MENU_MAPPASTE) {
 			// Undoセット
 			SetUndoData();
-			for (x = 0; x < SCREEN_CHIP_SIZE; ++x) {
-				for (y = 0; y < SCREEN_CHIP_SIZE; ++y) {
+			int nowScreenChipSize = g_hugeMapSize ? SCREEN_CHIP_SIZE : DEFALUT_SCREEN_CHIP_SIZE;
+			for (x = 0; x < nowScreenChipSize; ++x) {
+				for (y = 0; y < nowScreenChipSize; ++y) {
 					map[mapYtop + y][mapXtop + x] = g_MapBuffer[y][x];
 					mapObject[mapYtop + y][mapXtop + x] = g_ObjectBuffer[y][x];
 				}
@@ -1116,8 +1162,6 @@ void DeleteCheckMenu()
 	CheckMenuItem( GetMenu(g_hWnd), ID_MENU_DELOBJ, MF_UNCHECKED );
 }
 
-
-
 //##------------------------------------------------------------------
 // ＷＷＡ作成ツール
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int CmdShow)
@@ -1152,15 +1196,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	g_hWnd = CreateWindow("WWAMK", "WWA Wingマップ作成ツール",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_HSCROLL | WS_VSCROLL,
 		PositionX, PositionY,
-		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT , CW_USEDEFAULT,
 		NULL, NULL, hInst, NULL);
 
 	// サイズ変更
-	GetWindowRect(g_hWnd, &WindowRect);
-	GetClientRect(g_hWnd, &ClientRect);
-	SizeX = (WindowRect.right - WindowRect.left) - (ClientRect.right - ClientRect.left) + 440;
-	SizeY = (WindowRect.bottom - WindowRect.top) - (ClientRect.bottom - ClientRect.top) + 460;
-	SetWindowPos(g_hWnd, NULL, 0, 0, SizeX, SizeY, SWP_NOMOVE | SWP_NOZORDER);
+	changeMainWindowSize(DEFALUT_SCREEN_CHIP_SIZE, DEFALUT_SCREEN_CHIP_SIZE);
 
 	if (g_hWnd != NULL) {
 		ShowWindow(g_hWnd, CmdShow);
@@ -1202,24 +1242,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// ダイアログ表示
 	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
 	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
-	// ダイアログ移動
-	RECT rect;
-	RECT rectBox;
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgSelectObject, &rect);
-	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	GetWindowRect(g_hDlgSelectObject, &rectBox);
-	GetWindowRect(g_hDlgSelectMap, &rect);
-	MoveWindow(g_hDlgSelectMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgSelectMap, SW_SHOW);
-	ShowWindow(g_hDlgSelectObject, SW_SHOW);
 
-	// クイックビュー
-	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgQuickView, &rect);
-	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgQuickView, SW_SHOW);
+	// 物体・背景選択パーツウィンドウ位置のリセット
+	resetSelectMapAndObjectPosition();
 
 	// 画面色数取得
 	HDC hDC = GetDC(g_hWnd);

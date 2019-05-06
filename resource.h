@@ -201,6 +201,7 @@
 #define ID_Menu                         40036
 #define ID_MARKDRAW                     40037
 #define ID_MENU_MARKDRAW                40038
+#define ID_MENU_CHANGEWINDOWSIZE		40039
 
 // Next default values for new objects
 // 
