@@ -32,6 +32,8 @@
 #define IDD_DIALOG_QVIEW                130
 #define IDD_DIALOG_LOCALGATE_OBJ        131
 #define IDD_DIALOG_BASICMES             132
+#define IDD_DIALOG1                     134
+#define IDD_DIALOG_MINIMAP              134
 #define IDC_BUTTON_EDITMAP              1000
 #define IDC_BUTTON_MAP_ERASE            1001
 #define IDC_COMBO_OBJECT                1002
@@ -156,8 +158,13 @@
 #define IDC_EDIT_PARTS_NUMBER           1097
 #define IDC_STATIC_PARTS_NUMBER         1098
 #define IDC_STATIC_CURRENT_POSITION     1101
-#define IDC_EDIT3                       1102
 #define IDC_EDIT_CURRENT_POSITION       1102
+#define IDC_EDIT_PARTS_MESSAGE          1103
+#define IDC_PICTURE_PARTS_IMAGE         1104
+#define IDC_STATIC_NUMBER               1105
+#define IDC_PICTURE_QVIEW               1106
+#define IDC_STATIC_QVIEW_NUMBER         1107
+#define IDC_STATIC_QVIEW_TYPE           1108
 #define ID_MENUITEM40001                40001
 #define ID_MENU_NEW                     40001
 #define ID_MENUITEM40002                40002
@@ -201,14 +208,15 @@
 #define ID_Menu                         40036
 #define ID_MARKDRAW                     40037
 #define ID_MENU_MARKDRAW                40038
+#define ID_MENU_MINIWINDOW              40039
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         40039
-#define _APS_NEXT_CONTROL_VALUE         1103
+#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_COMMAND_VALUE         40040
+#define _APS_NEXT_CONTROL_VALUE         1109
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

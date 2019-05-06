@@ -92,15 +92,23 @@
 #define MAP_ATR_MAX			60
 #define OBJECT_ATR_MAX		60
 
+// バッファ文字列の最大長
+#define BUFFER_STR_MAX		100
+#define FILE_PATH_STR_MAX	250
+#define NUMBER_STR_MAX		30
+
 // 1画面の1辺のチップサイズ
 #define SCREEN_CHIP_SIZE	11
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
+#define MINIMAP_SIZE_DIVIDE	4
+#define MINIMAP_WIDTH		41
+#define MINIMAP_HEIGHT		21
 
 // パーツ選択ダイアログで表示するパーツ行数 (リソースファイルの変更も忘れずに)
-#define DIALOG_OBJECT_SELECT_LINE	5
+#define DIALOG_OBJECT_SELECT_LINE	4
 #define DIALOG_OBJECT_SELECT_COLUMN	10
-#define DIALOG_MAP_SELECT_LINE		5
+#define DIALOG_MAP_SELECT_LINE		4
 #define DIALOG_MAP_SELECT_COLUMN	10
 
 int DATA_MAP_COUNT;
@@ -116,16 +124,20 @@ int charaX, charaY;
 //メッセージ用バッファ
 char g_StrMessage[MESSAGE_NUMBER_MAX][MESSAGE_STR_MAX];
 char g_StrMessageSystem[20][MESSAGE_STR_MAX];
-char g_worldName[100];
-char g_worldPassword[100];
-char g_mapcgName[100];
-char g_mapcgNameBmp[100];
-char g_mapcgOld[100];
+char g_worldName[BUFFER_STR_MAX];
+char g_worldPassword[BUFFER_STR_MAX];
+char g_mapcgName[BUFFER_STR_MAX];
+char g_mapcgNameBmp[BUFFER_STR_MAX];
+char g_mapcgOld[BUFFER_STR_MAX];
 
 //マップ位置
 int mapX, mapY;
 int mapXtop = 0;
 int mapYtop = 0;
+int minimapXtop = 0;
+int minimapYtop = 0;
+
+const int minimapChipSize = CHIP_SIZE / MINIMAP_SIZE_DIVIDE;
 
 //ステータス
 int statusEnergyMax;
@@ -138,7 +150,7 @@ int itemDefence;
 int gameoverXp;
 int gameoverYp;
 
-//マップデータ
+// マップデータ
 short map[MAP_SIZE_MAX][MAP_SIZE_MAX];
 short mapObject[MAP_SIZE_MAX][MAP_SIZE_MAX];
 int objectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
@@ -147,7 +159,7 @@ int pointer;
 int itemBox[12];
 int StockObjectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
 int StockMapAttribute[PARTS_NUMBER_MAX][MAP_ATR_MAX];
-//Undo用
+// Undo用
 short UndoMap[MAP_SIZE_MAX][MAP_SIZE_MAX];
 short UndoMapObject[MAP_SIZE_MAX][MAP_SIZE_MAX];
 int UndoObjectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
@@ -155,7 +167,7 @@ int UndoMapAttribute[PARTS_NUMBER_MAX][MAP_ATR_MAX];
 
 unsigned char *UndoMapB;
 
-//複写用
+// 複写用
 int g_CopyObject[OBJECT_ATR_MAX];
 int g_CopyMap[MAP_ATR_MAX];
 char g_CopyObjectStr[MESSAGE_STR_MAX];
@@ -163,23 +175,23 @@ char g_CopyMapStr[MESSAGE_STR_MAX];
 short g_MapBuffer[SCREEN_CHIP_SIZE][SCREEN_CHIP_SIZE];
 short g_ObjectBuffer[SCREEN_CHIP_SIZE][SCREEN_CHIP_SIZE];
 
-//物体選択用
+// 物体選択用
 int g_SelectObjectX, g_SelectObjectY;
 int g_ScrObject = 0;
 int g_SelectObjectData;
 int g_EditObjectData;
-//背景選択用
+// 背景選択用
 int g_SelectMapX, g_SelectMapY;
 int g_ScrMap = 0;
 int g_SelectMapData;
 int g_EditMapData;
-//キャラクタＣＧ選択用
+// キャラクタＣＧ選択用
 int g_ScrCGChara = 0;
 int g_ScrCGCharaMax = 10;
 int g_hModeSelectChara;
 int g_iLoadCGHeight = 800;
 
-//汎用
+// 汎用
 CDib	*g_pDib;
 HINSTANCE	g_hInst;
 HWND 	g_hWnd;
@@ -193,30 +205,43 @@ HWND	g_hDlgFoundation = NULL;
 HWND	g_hDlgCalculate = NULL;
 HWND	g_hDlgQuickView = NULL;
 HWND	g_hDlgBasicMes = NULL;
+HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
 HDC		g_hmDCAnd = NULL;
 HDC		g_hmDCOr = NULL;
 HDC		g_hmDCExtra = NULL;
+HDC		g_hmDCMini = NULL;
+HDC		g_hmDCMiniAnd = NULL;
+HDC		g_hmDCMiniOr = NULL;
+HDC		g_hmDCMiniMap = NULL;
 HBITMAP	g_hBitmap = NULL;
 HBITMAP	g_hBitmapHalf = NULL;
 HBITMAP	g_hBitmapGif = NULL;
 HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
 HBITMAP	g_hBitmapExtra = NULL;
+HBITMAP g_hBitmapMini = NULL;
+HBITMAP g_hBitmapMiniAnd = NULL;
+HBITMAP g_hBitmapMiniOr = NULL;
+HBITMAP g_hBitmapMiniMap = NULL;
 
-int g_AtrSelectChara;	//ＣＧ選択用
+TRACKMOUSEEVENT g_MapEditTracking;
+TRACKMOUSEEVENT g_MiniMapTracking;
+
+int g_AtrSelectChara;	// ＣＧ選択用
 int g_EditMode;
 
-//フラグ
+// フラグ
 BOOL g_bRestoreObjectDialog = FALSE;
 BOOL g_bRestoreMapDialog = FALSE;
-BOOL g_MapLineFlag = TRUE;		//境界線
-BOOL g_ObjectNumberFlag = TRUE;	//物体パーツ番号表示
-BOOL g_MouseDrag = FALSE;		//マウスのドラッグ判定用
-BOOL g_bLoadGif = TRUE;			//GIFファイルが読み込めるか？
-BOOL g_bUpdate = FALSE;			//更新確認フラグ
-BOOL g_bInitial = FALSE;		//初期化済みか？
+BOOL g_MapLineFlag = TRUE;		// 境界線
+BOOL g_ObjectNumberFlag = TRUE;	// 物体パーツ番号表示
+BOOL g_MouseDrag = FALSE;		// マウスのドラッグ判定用
+BOOL g_MapJumping = FALSE;		// ミニマップのマウスドラッグ判定用
+BOOL g_bLoadGif = TRUE;			// GIFファイルが読み込めるか？
+BOOL g_bUpdate = FALSE;			// 更新確認フラグ
+BOOL g_bInitial = FALSE;		// 初期化済みか？
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
@@ -224,16 +249,16 @@ BOOL g_iColorTp;
 char g_MapData[FILE_DATA_MAX];
 char PressData[FILE_DATA_MAX];
 
-char g_szSettingFile[250] = "./WinWwamk.ini";	//設定ファイル名
-char g_szSelectFile[250] = "wwamap.dat";		//ファイル名
+char g_szSettingFile[FILE_PATH_STR_MAX] = "./WinWwamk.ini";	//設定ファイル名
+char g_szSelectFile[FILE_PATH_STR_MAX] = "wwamap.dat";		//ファイル名
 char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.1.8";
-char g_szSelectDir[250];
+char g_szSelectDir[FILE_PATH_STR_MAX];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
 int g_MouseOldX, g_MouseOldY;
 BOOL g_bCancel = FALSE;
 
-//各種上限
+// 各種上限
 int g_iMapSize = 501;
 int g_iMapPartsMax = 200;
 int g_iObjectPartsMax = 200;
@@ -241,12 +266,12 @@ int g_iMapAtrMax;
 int g_iObjectAtrMax;
 int g_iMesNumberMax;
 
-//暗証番号用
+// 暗証番号用
 BOOL g_bErrorPassword = FALSE;
 char g_szInputPassword[30];
 
 
-//物体データ用
+// 物体データ用
 struct StructOBJ {
 	char *Name;
 	int Object;
@@ -268,8 +293,8 @@ StructOBJ OBJ[] = {
 	{ "ジャンプゲート", OBJECT_LOCALGATE, IDD_DIALOG_LOCALGATE_OBJ },
 	{ "", END }
 };
-char *g_ObjectName[] = { "通常物体　　","メッセージ　　","ＵＲＬｹﾞｰﾄ　","ｽﾃｰﾀｽ変化　","アイテム　　","扉　　　　　","モンスター　","","","","","スコア表示　","","","物を売る　　","物を買う　　","ﾗﾝﾀﾞﾑ選択　　","二者択一　　","ｼﾞｬﾝﾌﾟｹﾞｰﾄ　" };
-char *g_MapName[] = { "道　　　　　","壁　　　　　","ｼﾞｬﾝﾌﾟｹﾞｰﾄ　","","ＵＲＬｹﾞｰﾄ　","ｱｲﾃﾑ分岐　　" };
+char *g_ObjectName[] = { "通常物体","メッセージ","ＵＲＬゲート","ステータス変化","アイテム","扉","モンスター","","","","","スコア表示","","","物を売る","物を買う","ランダム選択","二者択一","ジャンプゲート" };
+char *g_MapName[] = { "道","壁","ジャンプゲート","","ＵＲＬゲート","アイテム分岐" };
 
 StructOBJ MAP[] = {
 	{ "道", MAP_STREET, IDD_DIALOG_STREET },
@@ -280,7 +305,7 @@ StructOBJ MAP[] = {
 	{ "", END }
 };
 
-//物体編集ダイアログの内容
+// 物体編集ダイアログの内容
 struct StructObject {
 	int Object;
 	int Atr;
@@ -390,7 +415,7 @@ const int g_EditId[] = {
 };
 
 #define MACRO_MB(x) MessageBox(NULL,x,"",MB_OK);
-#define MACRO_NUMBER(x) if(TRUE){char szNum[20];sprintf(szNum,"%d",x);MACRO_MB(szNum)};
+#define MACRO_NUMBER(x) if(TRUE) { char szNum[NUMBER_STR_MAX]; sprintf_s(szNum, NUMBER_STR_MAX, "%d", x); MACRO_MB(szNum) };
 
 
 
@@ -411,6 +436,10 @@ void PaintWindow();
 void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
+// ミニマップ作成
+void CreateMiniMap();
+// ミニマップ描画
+void PaintMinimap( HWND hWnd );
 
 // 選択ダイアログプロシージャ
 LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
@@ -418,12 +447,16 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 // 編集ダイアログプロシージャ
 LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
-// クイックビューダイアログプロシージャ
-LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // キャラクタＣＧ選択ダイアログプロシージャ
 LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 基本メッセージダイアログプロシージャ
 LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+// クイックビューダイアログプロシージャ
+LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+// ミニマップダイアログプロシージャ
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+void JumpMapFromMiniMap(HWND hWnd, int x, int y);
 
 // 線と四角の描画
 void DrawLine( HDC hDC, int x, int y, int x2, int y2 );
@@ -490,31 +523,35 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	int result;
 
 	switch (message) {
-		//カーソルキー入力
+	//カーソルキー入力
 	case WM_KEYDOWN: {
 		if (LOWORD(wParam) == VK_DOWN) {
 			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_UP) {
 			if (mapYtop > 0) --mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_RIGHT) {
 			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_LEFT) {
 			if (mapXtop > 0) --mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 	}
-					 //最小化
+	// 最小化
 	case WM_SIZE: {
 		if (wParam == SIZE_RESTORED) {
 			ShowWindow(g_hDlgSelectObject, TRUE);
@@ -524,6 +561,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectChara, TRUE);
 			ShowWindow(g_hDlgExtra, TRUE);
 			ShowWindow(g_hDlgQuickView, TRUE);
+			ShowWindow(g_hDlgMiniMap, TRUE);
 		}
 		else if (wParam == SIZE_MINIMIZED) {
 			ShowWindow(g_hDlgSelectObject, FALSE);
@@ -533,10 +571,11 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectChara, FALSE);
 			ShowWindow(g_hDlgExtra, FALSE);
 			ShowWindow(g_hDlgQuickView, FALSE);
+			ShowWindow(g_hDlgMiniMap, FALSE);
 		}
 		break;
 	}
-				  //右ボタンクリック
+	// 右ボタンクリック
 	case WM_RBUTTONDOWN:
 		g_MouseDrag = FALSE;
 		x = LOWORD(lParam);
@@ -548,10 +587,10 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (g_SelectObjectData != 0) {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayObjectDialog();
-				//編集モード変更
+				// 編集モード変更
 				DeleteCheckMenu();
 				CheckMenuItem(GetMenu(g_hWnd), ID_MENU_PUTOBJ, MF_CHECKED);
 				g_EditMode = 1;
@@ -559,10 +598,10 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			else {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayMapDialog();
-				//編集モード変更
+				// 編集モード変更
 				DeleteCheckMenu();
 				CheckMenuItem(GetMenu(g_hWnd), ID_MENU_PUTMAP, MF_CHECKED);
 				g_EditMode = 0;
@@ -574,7 +613,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		break;
 
-		//マウス移動
+	// マウス移動
 	case WM_MOUSEMOVE:
 		g_MouseX = LOWORD(lParam);
 		g_MouseY = HIWORD(lParam) - YTOP;
@@ -586,6 +625,11 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			g_MouseOldX = g_MouseX;
 			g_MouseOldY = g_MouseY;
 		}
+		break;
+
+	case WM_MOUSELEAVE:
+		g_MouseDrag = FALSE;
+		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 
 	case WM_LBUTTONUP:
@@ -604,7 +648,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			y = y2;
 			y2 = g_MouseY / CHIP_SIZE;
 		}
-		//指定範囲内をキャラクタで埋める。
+		// 指定範囲内をキャラクタで埋める。
 		if ((x != x2) || (y != y2)) {
 			if (x2 > x) ++x2;
 			else ++x;
@@ -632,7 +676,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					}
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 
@@ -642,14 +688,17 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		int x2;
 
 		if (y > 0) {
-			//Undoセット
+			// Undoセット
 			SetUndoData();
-			//ドラッグ開始位置セット
+			// ドラッグ開始位置セット
 			g_MouseDragX = x;
 			g_MouseDragY = y;
-			if ((g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4)) g_MouseDrag = TRUE;
+			if ((g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4)) {
+				g_MouseDrag = TRUE;
+				TrackMouseEvent(&g_MapEditTracking);
+			}
 		}
-		//ステータスバークリック
+		// ステータスバークリック
 		if (y < 0) {
 			x2 = 96;
 			if ((x > x2) && (x < (x2 + 64))) {
@@ -683,7 +732,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			}
 			PaintStatus(TRUE);
 		}
-		//マップ画面クリック
+		// マップ画面クリック
 		else if (g_EditMode == 0) {
 			map[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop] = g_SelectMapData;
 			g_bUpdate = TRUE;
@@ -696,7 +745,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			g_SelectMapData = map[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop];
 			DestroyWindow(g_hDlgObject);
 			DestroyWindow(g_hDlgMap);
-			//Undoセット
+			// Undoセット
 			SetUndoData();
 			DisplayMapDialog();
 			InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
@@ -706,7 +755,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (g_SelectObjectData != 0) {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayObjectDialog();
 				InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
@@ -716,6 +765,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			mapObject[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop] = 0;
 		}
 		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_VSCROLL:
@@ -744,12 +794,13 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_MOUSEWHEEL: {
 		int scrollLines;
-		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		const BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
 		if (parameterResult == FALSE) {
 			scrollLines = 1;
 		}
@@ -787,6 +838,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 	}
 
@@ -816,6 +868,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_PAINT:
@@ -873,8 +926,8 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		// データのロード、セーブ
 		if (LOWORD(wParam) == ID_MENU_LOAD) {
 			int i;
-			char FileName[250] = "*.dat";
-			char CurrentDir[250];
+			char FileName[FILE_PATH_STR_MAX] = "*.dat";
+			char CurrentDir[FILE_PATH_STR_MAX];
 			OPENFILENAME ofn;
 
 			GetCurrentDirectory(sizeof(CurrentDir), CurrentDir);
@@ -891,19 +944,20 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (GetOpenFileName(&ofn)) {
 				//ディレクトリ検出
 				for (i = strlen(FileName); i > 0; --i) if (FileName[i] == '\\') break;
-				strcpy(g_szSelectDir, FileName);
+				strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, FileName);
 				g_szSelectDir[i + 1] = '\0';
-				strcpy(g_szSelectFile, (FileName + i + 1));
+				strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (FileName + i + 1));
 				//データ読み込み
 				LoadMapData(g_szSelectFile);
 				if (g_bErrorPassword == TRUE) MessageBox(g_hWnd, "暗証番号が違います。", "警告！", MB_OK);
 				LoadBitmap();
+				CreateMiniMap();
 			}
 		}
 		else if (LOWORD(wParam) == ID_MENU_SAVE) {
 			int i;
-			char FileName[250] = "*.dat";
-			char CurrentDir[250];
+			char FileName[FILE_PATH_STR_MAX] = "*.dat";
+			char CurrentDir[FILE_PATH_STR_MAX];
 
 			OPENFILENAME ofn;
 			GetCurrentDirectory(sizeof(CurrentDir), CurrentDir);
@@ -920,9 +974,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (GetSaveFileName(&ofn)) {
 				//ディレクトリ検出
 				for (i = strlen(FileName); i > 0; --i) if (FileName[i] == '\\') break;
-				strcpy(g_szSelectDir, FileName);
+				strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, FileName);
 				g_szSelectDir[i + 1] = '\0';
-				strcpy(g_szSelectFile, (FileName + i + 1));
+				strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (FileName + i + 1));
 				//データ保存
 				SaveMapData(g_szSelectFile);
 			}
@@ -1003,25 +1057,30 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_QVIEW, MF_GRAYED);
 		}
 		// 物体選択ウィンドウの表示
-		else if (LOWORD(wParam) == ID_MENU_OBJWINDOW) {
-			ShowWindow(g_hDlgSelectObject, TRUE);
-			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_OBJWINDOW, MF_GRAYED);
+		else if( LOWORD(wParam) == ID_MENU_OBJWINDOW ){
+			ShowWindow( g_hDlgSelectObject, TRUE );
+			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_OBJWINDOW, MF_GRAYED );
 		}
 		// 背景選択ウィンドウの表示
-		else if (LOWORD(wParam) == ID_MENU_MAPWINDOW) {
-			ShowWindow(g_hDlgSelectMap, TRUE);
-			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED);
+		else if( LOWORD(wParam) == ID_MENU_MAPWINDOW ){
+			ShowWindow( g_hDlgSelectMap, TRUE );
+			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED );
+		}
+		// ミニマップウインドウの表示
+		else if (LOWORD(wParam) == ID_MENU_MINIWINDOW) {
+			ShowWindow(g_hDlgMiniMap, TRUE);
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_GRAYED);
 		}
 		// パーツのコピー
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
 			if (g_EditMode == 0) {
 				for (i = 0; i < MAP_ATR_MAX; ++i) g_CopyMap[i] = mapAttribute[g_SelectMapData][i];
-				strcpy(g_CopyMapStr, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
+				strcpy_s(g_CopyMapStr, MESSAGE_STR_MAX, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
 				g_CopyMap[ATR_STRING] = 0;
 			}
 			else if (g_EditMode == 1) {
 				for (i = 0; i < OBJECT_ATR_MAX; ++i) g_CopyObject[i] = objectAttribute[g_SelectObjectData][i];
-				strcpy(g_CopyObjectStr, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
+				strcpy_s(g_CopyObjectStr, MESSAGE_STR_MAX, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
 				g_CopyObject[ATR_STRING] = 0;
 			}
 		}
@@ -1051,7 +1110,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			DestroyWindow(g_hDlgSelectChara);
 			g_bUpdate = TRUE;
 			RestoreUndoData();
+			CreateMiniMap();
 			InvalidateRect(g_hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 			InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 			InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 		}
@@ -1073,7 +1134,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					mapObject[mapYtop + y][mapXtop + x] = g_ObjectBuffer[y][x];
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect(g_hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		// ツールの終了
 		else if (LOWORD(wParam) == ID_MENU_END) {
@@ -1122,10 +1185,8 @@ void DeleteCheckMenu()
 // ＷＷＡ作成ツール
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int CmdShow)
 {
-	MSG			msg;
 	WNDCLASS	wc;
 	g_hInst = hInst;
-	OSVERSIONINFO OsVersion;
 	RECT WindowRect, ClientRect;
 	int SizeX, SizeY, PositionX, PositionY;
 
@@ -1166,6 +1227,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		ShowWindow(g_hWnd, CmdShow);
 		UpdateWindow(g_hWnd);
 	}
+	else {
+		return FALSE;
+	}
 
 	// 初期ファイル名設定
 	unsigned int i, j;
@@ -1184,9 +1248,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		}
 		// ファイル名抽出
 		for (i = strlen(pszCmdLine); i > 0; --i) if (pszCmdLine[i] == '\\') break;
-		strcpy(g_szSelectFile, (pszCmdLine + i + 1));
+		strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, (pszCmdLine + i + 1));
 		// ディレクトリ移動
-		strcpy(g_szSelectDir, pszCmdLine);
+		strcpy_s(g_szSelectDir, FILE_PATH_STR_MAX, pszCmdLine);
 		g_szSelectDir[i + 1] = '\0';
 		SetCurrentDirectory(g_szSelectDir);
 	}
@@ -1198,13 +1262,21 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	if (g_bErrorPassword == TRUE) MessageBox(g_hWnd, "暗証番号が違います。", "警告！", MB_OK);
 	// ビットマップ読み込み
 	LoadBitmap();
+	CreateMiniMap();
 
-	// ダイアログ表示
-	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
-	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
-	// ダイアログ移動
 	RECT rect;
 	RECT rectBox;
+	// ダイアログ表示
+	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgQuickView, &rect);
+	// ダイアログ移動
+	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgQuickView, SW_SHOW);
+
+	// パーツ選択
+	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
+	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
 	GetWindowRect(g_hWnd, &rectBox);
 	GetWindowRect(g_hDlgSelectObject, &rect);
 	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
@@ -1214,12 +1286,12 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	ShowWindow(g_hDlgSelectMap, SW_SHOW);
 	ShowWindow(g_hDlgSelectObject, SW_SHOW);
 
-	// クイックビュー
-	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgQuickView, &rect);
-	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgQuickView, SW_SHOW);
+	// ミニマップ
+	g_hDlgMiniMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_MINIMAP), g_hWnd, (DLGPROC)MiniMapDialogProc);
+	GetWindowRect(g_hDlgSelectMap, &rectBox);
+	GetWindowRect(g_hDlgMiniMap, &rect);
+	MoveWindow(g_hDlgMiniMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgMiniMap, SW_SHOW);
 
 	// 画面色数取得
 	HDC hDC = GetDC(g_hWnd);
@@ -1227,6 +1299,13 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		MessageBox(g_hWnd, "このツールは、256色環境では画像がうまく表示されません。\nコントロールパネルの画面の設定で、16ビットカラー以上を選択してください。", "警告！", MB_OK);
 	}
 	ReleaseDC(g_hWnd, hDC);
+
+	//マウストラック設定
+	g_MapEditTracking = {
+		sizeof(TRACKMOUSEEVENT),
+		TME_LEAVE,
+		g_hWnd
+	};
 
 	// フォーカス移動
 	SetFocus(g_hWnd);
@@ -1236,6 +1315,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	// 初期化完了
 	g_bInitial = TRUE;
 
+	MSG	msg;
 	if (g_hWnd != NULL) {
 		while (GetMessage(&msg, NULL, 0, 0)) {
 			// ダイアログメッセージ
@@ -1250,6 +1330,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 				if (IsDialogMessage(g_hDlgSelectMap, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgSelectObject, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgQuickView, &msg)) continue;
+				else if (IsDialogMessage(g_hDlgMiniMap, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgExtra, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgCalculate, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgFoundation, &msg)) continue;
@@ -1281,14 +1362,18 @@ BOOL LoadBitmap()
 		g_hmDCHalf = CreateCompatibleDC(hDC);
 		g_hmDCAnd = CreateCompatibleDC(hDC);
 		g_hmDCOr = CreateCompatibleDC(hDC);
+		g_hmDCMini = CreateCompatibleDC(hDC);
+		g_hmDCMiniAnd = CreateCompatibleDC(hDC);
+		g_hmDCMiniOr = CreateCompatibleDC(hDC);
+		g_hmDCMiniMap = CreateCompatibleDC(hDC);
 
 		g_hmDCExtra = CreateCompatibleDC(hDC);
 		g_hBitmapExtra = CreateCompatibleBitmap(hDC, CHIP_SIZE * SCREEN_CHIP_SIZE, 20);
 		SelectObject(g_hmDCExtra, g_hBitmapExtra);
 	}
 	// 現在のビットマップ名記録
-	if (g_bLoadGif == TRUE) strcpy(g_mapcgOld, g_mapcgName);
-	else strcpy(g_mapcgOld, g_mapcgNameBmp);
+	if (g_bLoadGif == TRUE) strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgName);
+	else strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 
 	// 読み出し中ダイアログ表示
 	Rectangle(hDC, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, CHIP_SIZE * SCREEN_CHIP_SIZE);
@@ -1296,10 +1381,12 @@ BOOL LoadBitmap()
 
 	// 画像メモリにGIF描画
 	g_bLoadGif = ReadGifImage();
-	if (g_bFileNotFound == TRUE) return FALSE;
+	if (g_bFileNotFound == TRUE) {
+		return FALSE;
+	}
 	// GIF読み込み失敗時
 	if (g_bLoadGif == FALSE) {
-		strcpy(g_mapcgOld, g_mapcgNameBmp);
+		strcpy_s(g_mapcgOld, BUFFER_STR_MAX, g_mapcgNameBmp);
 		if (g_pDib->ReadFile(g_mapcgNameBmp) == FALSE) {
 			MessageBox(g_hWnd, "このマップデータに対応する画像ファイル（256色BMPファイル）が読み込めません。\n「編集－基本設定の編集」で256色BMPファイルを指定してください。\n\nこのシステムでは、GIFファイルは直接読み込めないので、\n編集用に256色BMPファイルが必要になります。", "BMPファイル読み込み失敗", MB_OK);
 			// デバイス解放
@@ -1337,6 +1424,7 @@ BOOL LoadBitmap()
 	if (g_iColorTp == 0) g_iColorTp = GetPixel(g_hmDC, 60, 20);
 	SetBkColor(g_hmDC, g_iColorTp);
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, g_hmDC, 0, 0, SRCCOPY);
+
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
 	// OR画像領域確保
@@ -1349,10 +1437,26 @@ BOOL LoadBitmap()
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
 
+	// ミニマップのCG領域確保
+	HDC* miniMapHDCs[] = { &g_hmDCMini, &g_hmDCMiniAnd, &g_hmDCMiniOr };
+	HDC* baseHDCs[] = { &g_hmDC, &g_hmDCAnd, &g_hmDCOr };
+	HBITMAP* miniMapBitmaps[] = { &g_hBitmapMini, &g_hBitmapMiniAnd, &g_hBitmapMiniOr };
+	for (int i = 0; i < 3; i++) {
+		if (*miniMapBitmaps[i] != NULL) {
+			DeleteObject(*miniMapBitmaps[i]);
+		}
+		const int imageWidth = CHIP_SIZE * 10 / MINIMAP_SIZE_DIVIDE;
+		const int imageHeight = g_iLoadCGHeight / MINIMAP_SIZE_DIVIDE;
+		*miniMapBitmaps[i] = CreateCompatibleBitmap(hDC, imageWidth, imageHeight);
+		SelectObject(*miniMapHDCs[i], *miniMapBitmaps[i]);
+		StretchBlt(*miniMapHDCs[i], 0, 0, imageWidth, imageHeight, *baseHDCs[i], 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, SRCCOPY);
+	}
+
 	// デバイス解放
 	ReleaseDC(g_hWnd, hDC);
 	// 再描画
 	InvalidateRect(g_hWnd, NULL, FALSE);
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 
@@ -1446,16 +1550,16 @@ void PaintStatus(BOOL flag)
 {
 	// ステータス非表示
 	HDC hDC = GetDC(g_hWnd);
-	char str[100];
+	char str[BUFFER_STR_MAX];
 	int x;
 	const int y = 1;
 
 	SetBkMode(g_hmDCExtra, TRANSPARENT);
 	Rectangle(g_hmDCExtra, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, 20);
 
-	sprintf(str, "X=%2d ", g_MouseX / CHIP_SIZE + mapXtop);
+	sprintf_s(str, BUFFER_STR_MAX, "X=%2d ", g_MouseX / CHIP_SIZE + mapXtop);
 	TextOut(g_hmDCExtra, 4, 1, str, strlen(str));
-	sprintf(str, "Y=%2d ", g_MouseY / CHIP_SIZE + mapYtop);
+	sprintf_s(str, BUFFER_STR_MAX, "Y=%2d ", g_MouseY / CHIP_SIZE + mapYtop);
 	TextOut(g_hmDCExtra, 50, 1, str, strlen(str));
 
 	x = 96;
@@ -1472,6 +1576,86 @@ void PaintStatus(BOOL flag)
 	BitBlt(hDC, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, 20, g_hmDCExtra, 0, 0, SRCCOPY);
 	ReleaseDC(g_hWnd, hDC);
 }
+
+
+// ミニマップ作成
+void CreateMiniMap()
+{
+	int y, x;
+	int objNumber, mapNumber;
+	HDC hDC;
+	hDC = GetDC(g_hDlgMiniMap);
+
+	// ミニマップのCG領域確保
+	if (g_hBitmapMiniMap != NULL) {
+		DeleteObject(g_hBitmapMiniMap);
+	}
+	g_hBitmapMiniMap = CreateCompatibleBitmap(hDC, g_iMapSize * 10, g_iMapSize * 10);
+	SelectObject(g_hmDCMiniMap, g_hBitmapMiniMap);
+
+	for (y = 0; y < g_iMapSize; y++) {
+		for (x = 0; x < g_iMapSize; x++) {
+			mapNumber = map[y][x];
+			BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, mapAttribute[mapNumber][ATR_X] / 4, mapAttribute[mapNumber][ATR_Y] / 4, SRCCOPY);
+			objNumber = mapObject[y][x];
+			if (objNumber != 0) {
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniAnd, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCAND);
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniOr, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCPAINT);
+			}
+		}
+	}
+}
+
+
+//##------------------------------------------------------------------
+// ミニマップ描画
+
+void PaintMinimap(HWND hWnd)
+{
+	int i;
+	HDC hDC;
+	PAINTSTRUCT ps;
+	HPEN screenPen, currentPen;
+	HGDIOBJ currentBrush;
+
+	hDC = BeginPaint(hWnd, &ps);
+	BitBlt(hDC, 0, 0, MINIMAP_WIDTH * minimapChipSize, MINIMAP_HEIGHT * minimapChipSize, g_hmDCMiniMap, minimapXtop * minimapChipSize, minimapYtop * minimapChipSize, SRCCOPY);
+
+	// 画面境界線描画
+	screenPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+	currentPen = CreatePen(PS_INSIDEFRAME, 2, RGB(255, 0, 0));
+	currentBrush = GetStockObject(NULL_BRUSH);
+
+	SelectObject(hDC, screenPen);
+
+	int screenLinePos;
+	for (i = 0; i < MINIMAP_WIDTH; ++i) {
+		if ((i + minimapXtop) % minimapChipSize == 0) {
+			screenLinePos = (i * minimapChipSize) + (minimapChipSize / 2);
+			DrawLine(hDC, screenLinePos, 0, screenLinePos, MINIMAP_HEIGHT * minimapChipSize);
+		}
+	}
+	for (i = 0; i < MINIMAP_HEIGHT; ++i) {
+		if ((i + minimapYtop) % minimapChipSize == 0) {
+			screenLinePos = (i * minimapChipSize) + (minimapChipSize / 2);
+			DrawLine(hDC, 0, screenLinePos, MINIMAP_WIDTH * minimapChipSize, screenLinePos);
+		}
+	}
+	DeleteObject(screenPen);
+
+	SelectObject(hDC, currentPen);
+	SelectObject(hDC, currentBrush);
+	{
+		const int currentX = (mapXtop - minimapXtop) * minimapChipSize;
+		const int currentY = (mapYtop - minimapYtop) * minimapChipSize;
+		Rectangle(hDC, currentX, currentY, currentX + minimapChipSize * SCREEN_CHIP_SIZE, currentY + minimapChipSize * SCREEN_CHIP_SIZE);
+	}
+	DeleteObject(currentPen);
+	DeleteObject(currentBrush);
+
+	EndPaint(hWnd, &ps);
+}
+
 
 
 //##------------------------------------------------------------------
@@ -1547,14 +1731,24 @@ BOOL LoadMapData(char* FileName)
 	DestroyWindow(g_hDlgSelectChara);
 
 	// データオープン
-	hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		MessageBox(g_hWnd, "マップデータファイルが読み込みできません。", "注意", MB_OK);
+	try
+	{
+		BOOL readResult;
+		hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+		if (hFile == INVALID_HANDLE_VALUE) {
+			throw "マップデータファイルが読込できません。";
+		}
+		readResult = ReadFile(hFile, LPVOID(&PressData), sizeof(PressData), &BytesRead, 0);
+		if (readResult == FALSE) {
+			throw "マップデータファイルが読込できません。";
+		}
+		CloseHandle(hFile);
+	}
+	catch (char* errorMessage)
+	{
+		MessageBox(g_hWnd, errorMessage, "注意", MB_OK);
 		return FALSE;
 	}
-	// データ読み込み
-	ReadFile(hFile, LPVOID(&PressData), sizeof(PressData), &BytesRead, 0);
-	CloseHandle(hFile);
 
 	// データ解凍
 	int i, j;
@@ -1638,6 +1832,8 @@ BOOL LoadMapData(char* FileName)
 	// スクロールバー設定
 	SetScrollRange(g_hWnd, SB_VERT, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
 	SetScrollRange(g_hWnd, SB_HORZ, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
+	SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, g_iMapSize - MINIMAP_HEIGHT, FALSE);
+	SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, g_iMapSize - MINIMAP_WIDTH, FALSE);
 
 	// パーツ最大数設定
 	g_iMapPartsMax = ((iDataMapCount - 1) / 50) * 50 + 50;
@@ -1802,25 +1998,26 @@ BOOL LoadMapData(char* FileName)
 		for (i = 0; i < 20; ++i) loadMapString(g_StrMessageSystem[i]);
 	}
 
-	//暗証番号のチェック
+	// 暗証番号のチェック
 	g_bErrorPassword = FALSE;
 	g_szInputPassword[0] = '\0';
 	int number;
 	if (atoi(g_worldPassword) != 0) {
 		if (g_MapData[DATA_VERSION] >= 29) {
-			//暗証番号変換
+			// 暗証番号変換
 			number = atoi(g_worldPassword);
 			number = (((number / 10) - 1197) / 17) - 2357;
-			_itoa(number, g_worldPassword, 10);
+			_itoa_s(number, g_worldPassword, BUFFER_STR_MAX, 10);
 		}
 		ShowWindow(g_hDlgSelectObject, FALSE);
 		ShowWindow(g_hDlgSelectMap, FALSE);
 		ShowWindow(g_hDlgQuickView, FALSE);
-		//if( g_bInitial == FALSE ) LibLoad();
+		ShowWindow(g_hDlgMiniMap, FALSE);
 		DialogBox(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PASSWORD), g_hWnd, (DLGPROC)DialogProcPassword);
 		ShowWindow(g_hDlgSelectObject, TRUE);
 		ShowWindow(g_hDlgSelectMap, TRUE);
 		ShowWindow(g_hDlgQuickView, TRUE);
+		ShowWindow(g_hDlgMiniMap, TRUE);
 	}
 	//Undoセット
 	SetUndoData();
@@ -1834,9 +2031,9 @@ BOOL LoadMapData(char* FileName)
 	}
 
 	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf(sTitle, "%s [%s]", g_szTitleName, FileName);
-	SetWindowText(g_hWnd, sTitle);
+	CString titleText;
+	titleText.Format("%s [%s]", g_szTitleName, FileName);
+	SetWindowText(g_hWnd, titleText);
 
 	return TRUE;
 }
@@ -2012,8 +2209,8 @@ BOOL SaveMapData( char *FileName )
 	//暗証番号変換
 	number = atoi( g_worldPassword );
 	if( number != 0 ){
-		number = ((number +2357) *17 +1197) *10 +(number %9);
-		_itoa( number, szSavePassword, 10 );
+		number = ((number + 2357) * 17 + 1197) * 10 + (number % 9);
+		_itoa_s(number, szSavePassword, 30, 10);
 	} else {
 		szSavePassword[0] = '\0';
 	}
@@ -2048,18 +2245,18 @@ BOOL SaveMapData( char *FileName )
 	WriteFile( hFile, g_MapData, pointer, &dwWritten, NULL );
 	CloseHandle( hFile );
 
-	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf( sTitle, "%s [%s]", g_szTitleName, FileName );
-	SetWindowText( g_hWnd, sTitle );
+	// タイトルテキスト設定
+	CString titleText;
+	titleText.Format("%s [%s]", g_szTitleName, FileName);
+	SetWindowText(g_hWnd, titleText);
 
-	//バックアップデータ作成
-	char szBackupFile[250];
+	// バックアップデータ作成
+	CString backupFileName;
 	SYSTEMTIME systime;
 	GetLocalTime( &systime );
-	sprintf( szBackupFile, "backup\\%s%d.dat", FileName, systime.wHour );
-	//書き込み
-	hFile = CreateFile( szBackupFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+	backupFileName.Format("backup\\%s%d.dat", FileName, systime.wHour);
+	// 書き込み
+	hFile = CreateFile( backupFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile != INVALID_HANDLE_VALUE ){
 		WriteFile( hFile, g_MapData, pointer, &dwWritten, NULL );
 		CloseHandle( hFile );
@@ -2077,7 +2274,7 @@ void saveMapString( char *str )
 	WCHAR buff[MESSAGE_STR_MAX];
 
 	if( strlen(str) != 0 ){
-		length = MultiByteToWideChar( CP_ACP, 0, str, strlen(str), buff, sizeof(buff) );
+		length = MultiByteToWideChar(CP_ACP, 0, str, strlen(str), buff, sizeof(buff) / 2);
 		buff[length] = '\0';
 		
 		for( i = 0 ; i < (int)wcslen(buff) ; ++i ){
@@ -2103,31 +2300,31 @@ void paintMapAll(HDC hDC)
 	//変数定義
 	int i, j;
 	int mdata;
-	char objectNumber[10];
 	HFONT numberFont = CreateFont(14, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_CHARACTER_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, FF_DONTCARE);
 	HFONT defaultFont = SelectFont(hDC, numberFont);
 
 	//マップ描画
 	for (j = 0; j < SCREEN_CHIP_SIZE; ++j) {
 		for (i = 0; i < SCREEN_CHIP_SIZE; ++i) {
-			//背景描画
+			// 背景描画
 			mdata = map[j + mapYtop][i + mapXtop];
 			BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[mdata][ATR_X], mapAttribute[mdata][ATR_Y], SRCCOPY);
 
-			//オブジェクト描画
+			// オブジェクト描画
 			mdata = mapObject[j + mapYtop][i + mapXtop];
 			if (mdata != 0) {
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCAnd, objectAttribute[mdata][ATR_X], objectAttribute[mdata][ATR_Y], SRCAND);
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCOr, objectAttribute[mdata][ATR_X], objectAttribute[mdata][ATR_Y], SRCPAINT);
 			}
-			//プレーヤーキヤラクタ描画
+			// プレーヤーキヤラクタ描画
 			if ((charaX == (i + mapXtop)) && (charaY == (j + mapYtop))) {
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCAnd, CHIP_SIZE * 4, 0, SRCAND);
 				BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, CHIP_SIZE, CHIP_SIZE, g_hmDCOr, CHIP_SIZE * 4, 0, SRCPAINT);
 			}
-			//透明パーツ識別マーク描画
+			// 物体パーツ番号描画
 			if (g_ObjectNumberFlag == TRUE && mdata != 0) {
-				sprintf(objectNumber, "%d", mdata);
+				char objectNumber[10];
+				sprintf_s(objectNumber, 10, "%d", mdata);
 				TextOut(hDC, i * CHIP_SIZE, j * CHIP_SIZE + YTOP, objectNumber, strlen(objectNumber));
 			}
 		}
@@ -2149,7 +2346,6 @@ void PaintWindowSelectObject(HWND hWnd)
 	hDC = BeginPaint(hWnd, &ps);
 	int selectX = g_SelectObjectData % DIALOG_OBJECT_SELECT_COLUMN;
 	int selectY = g_SelectObjectData / DIALOG_OBJECT_SELECT_COLUMN;
-	char str[50];
 
 	//イメージの描画
 	for (j = 0; j < DIALOG_OBJECT_SELECT_LINE; ++j) {
@@ -2160,8 +2356,18 @@ void PaintWindowSelectObject(HWND hWnd)
 		}
 	}
 
-	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectObjectData, FALSE);
-	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrObject * DIALOG_OBJECT_SELECT_COLUMN, FALSE);
+	// パーツ番号
+	{
+		CString PartsNumberText;
+		PartsNumberText.Format("パーツ番号: %d", g_SelectObjectData);
+		SetDlgItemText(hWnd, IDC_STATIC_PARTS_NUMBER, PartsNumberText);
+	}
+	// 表示位置
+	{
+		CString CurrentPositionText;
+		CurrentPositionText.Format("左上: %d", g_ScrObject * DIALOG_OBJECT_SELECT_COLUMN);
+		SetDlgItemText(hWnd, IDC_STATIC_CURRENT_POSITION, CurrentPositionText);
+	}
 
 	//境界線表示
 	hpen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
@@ -2191,7 +2397,6 @@ void PaintWindowSelectMap(HWND hWnd)
 	hDC = BeginPaint(hWnd, &ps);
 	int selectX = g_SelectMapData % DIALOG_MAP_SELECT_COLUMN;
 	int selectY = g_SelectMapData / DIALOG_MAP_SELECT_COLUMN;
-	char str[50];
 
 	//イメージの描画
 	for (j = 0; j < DIALOG_MAP_SELECT_LINE; ++j) {
@@ -2201,9 +2406,19 @@ void PaintWindowSelectMap(HWND hWnd)
 			BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE, CHIP_SIZE, CHIP_SIZE, g_hmDC, x, y, SRCCOPY);
 		}
 	}
-	//文字表示
-	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectMapData, FALSE);
-	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrMap * DIALOG_MAP_SELECT_COLUMN, FALSE);
+
+	// パーツ番号
+	{
+		CString PartsNumberText;
+		PartsNumberText.Format("パーツ番号: %d", g_SelectMapData);
+		SetDlgItemText(hWnd, IDC_STATIC_PARTS_NUMBER, PartsNumberText);
+	}
+	// 表示位置
+	{
+		CString CurrentPositionText;
+		CurrentPositionText.Format("左上: %d", g_ScrMap * DIALOG_OBJECT_SELECT_COLUMN);
+		SetDlgItemText(hWnd, IDC_STATIC_CURRENT_POSITION, CurrentPositionText);
+	}
 
 	//境界線表示
 	hpen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
@@ -2392,8 +2607,8 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		if (y < CHIP_SIZE * DIALOG_MAP_SELECT_LINE) {
 			g_SelectMapY = g_ScrMap + y / CHIP_SIZE;
 		}
-		InvalidateRect( hWnd, NULL, FALSE );
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
+		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgQuickView, NULL, FALSE);
 		//現在選択中の背景を設定
 		g_SelectMapData = g_SelectMapX + g_SelectMapY * DIALOG_MAP_SELECT_COLUMN;
 		//編集モード変更
@@ -2576,17 +2791,16 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		break;
 
 	case WM_PAINT: {
-		//オブジェクト描画
+		// オブジェクト描画
 		HDC hDC = GetDC( hWnd );
 		BitBlt( hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[GetCharaNumber(hWnd)][ATR_X], objectAttribute[GetCharaNumber(hWnd)][ATR_Y], SRCCOPY );
 		BitBlt( hDC, 50, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[GetCharaNumber(hWnd)][ATR_X2], objectAttribute[GetCharaNumber(hWnd)][ATR_Y2], SRCCOPY );
-		//文字表示
-		char str[50];
-		SetBkMode( hDC, TRANSPARENT );
-		sprintf( str, "物体番号：%d", GetCharaNumber(hWnd) );
-		TextOut( hDC,96,27,str,strlen(str) );
 		ReleaseDC( hWnd, hDC );
-		//ウィンドウ再描画
+		// 文字表示
+		CString partsNumberStr;
+		partsNumberStr.Format("物体番号: %d", GetCharaNumber(hWnd));
+		SetDlgItemText(hWnd, IDC_STATIC_NUMBER, partsNumberStr);
+		// ウィンドウ再描画
 		if( g_bRestoreObjectDialog == TRUE ){
 			DestroyWindow( hWnd );
 			return 1;
@@ -2601,7 +2815,6 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		}
 		g_bCancel = FALSE;
 		if( g_bRestoreObjectDialog == TRUE ) DisplayObjectDialog();
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		return 1;
 	}
 	}
@@ -2669,12 +2882,11 @@ LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPAR
 		// オブジェクト描画
 		HDC hDC = GetDC(hWnd);
 		BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[GetCharaNumber(hWnd)][ATR_X], mapAttribute[GetCharaNumber(hWnd)][ATR_Y], SRCCOPY);
-		// 文字表示
-		char str[50];
-		SetBkMode(hDC, TRANSPARENT);
-		sprintf(str, "背景番号：%d", GetCharaNumber(hWnd));
-		TextOut(hDC, 96, 27, str, strlen(str));
 		ReleaseDC(hWnd, hDC);
+		// 文字表示
+		CString partsNumberStr;
+		partsNumberStr.Format("背景番号: %d", GetCharaNumber(hWnd));
+		SetDlgItemText(hWnd, IDC_STATIC_NUMBER, partsNumberStr);
 		// ウィンドウ再描画
 		if (g_bRestoreMapDialog == TRUE) {
 			DestroyWindow(hWnd);
@@ -2706,32 +2918,48 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	switch (message) {
 	case WM_PAINT: {
 		HDC hDC = GetDC(hWnd);
-		int type;
+		int* partsImageX;
+		int* partsImageY;
+		char* partsMessageString;
+		int* partsNumber;
+		char* partsTypeString;
+		CString partsCaptionString;
+
 		if (g_EditMode == 0) {
-			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[g_SelectMapData][ATR_X], mapAttribute[g_SelectMapData][ATR_Y], SRCCOPY);
-			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
-			//文字表示
-			char str[50];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf(str, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData);
-			TextOut(hDC, 50, 5, str, strlen(str));
-			type = mapAttribute[g_SelectMapData][ATR_TYPE];
-			sprintf(str, "種類：%s ", g_MapName[type]);
-			TextOut(hDC, 50, 26, str, strlen(str));
+			partsImageX = &mapAttribute[g_SelectMapData][ATR_X];
+			partsImageY = &mapAttribute[g_SelectMapData][ATR_Y];
+			partsMessageString = g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]];
+			partsNumber = &g_SelectMapData;
+			partsTypeString = g_MapName[mapAttribute[g_SelectMapData][ATR_TYPE]];
+			partsCaptionString = "背景パーツ";
 		}
-		else if (g_EditMode == 1) {
-			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[g_SelectObjectData][ATR_X], objectAttribute[g_SelectObjectData][ATR_Y], SRCCOPY);
-			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
-			//文字表示
-			char str[50];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf(str, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData);
-			TextOut(hDC, 50, 5, str, strlen(str));
-			type = objectAttribute[g_SelectObjectData][ATR_TYPE];
-			sprintf(str, "種類：%s ", g_ObjectName[type]);
-			TextOut(hDC, 50, 26, str, strlen(str));
+		else {
+			partsImageX = &objectAttribute[g_SelectObjectData][ATR_X];
+			partsImageY = &objectAttribute[g_SelectObjectData][ATR_Y];
+			partsMessageString = g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]];
+			partsNumber = &g_SelectObjectData;
+			partsTypeString = g_ObjectName[objectAttribute[g_SelectObjectData][ATR_TYPE]];
+			partsCaptionString = "物体パーツ";
 		}
+
+		{
+			HWND pictureItem = GetDlgItem(hWnd, IDC_PICTURE_QVIEW);
+			HDC pictureDC = GetDC(pictureItem);
+			BitBlt(pictureDC, 0, 0, CHIP_SIZE, CHIP_SIZE, g_hmDC, *partsImageX, *partsImageY, SRCCOPY);
+		}
+		SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, partsMessageString);
+
+		// パーツ番号
+		CString partsNumberText;
+		partsNumberText.Format("%s %4d番", partsCaptionString.GetString(), *partsNumber);
+		SetDlgItemText(g_hDlgQuickView, IDC_STATIC_QVIEW_NUMBER, partsNumberText);
+
+		// 種類
+		CString partsTypeText;
+		partsTypeText.Format("種類: %s", partsTypeString);
+		SetDlgItemText(g_hDlgQuickView, IDC_STATIC_QVIEW_TYPE, partsTypeText);
 		ReleaseDC(hWnd, hDC);
+
 		break;
 	}
 	case WM_COMMAND: {
@@ -2921,8 +3149,8 @@ void DisplayObjectDialog()
 	int i;
 	int number;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
-	int id;
+	char strCut[BUFFER_STR_MAX];
+	int dialogId = -1;
 	int position;
 	int type;
 	RECT rect;
@@ -2940,18 +3168,18 @@ void DisplayObjectDialog()
 		MessageBox( g_hWnd, "パーツ番号０の物体は編集できません。\nこのパーツはマップの物体を消去するときに指定してください。", "注意！", MB_OK );
 		return;
 	}
-	//種類の判定
-	for( position = 0 ; position < 20 ; ++position ){
-		if( OBJ[position].Object == END ) break;
-		if( type == OBJ[position].Object ){
-			id = OBJ[position].Id;
+	// 種類の判定
+	for (position = 0; position < 20; ++position) {
+		if (OBJ[position].Object == END) break;
+		if (type == OBJ[position].Object) {
+			dialogId = OBJ[position].Id;
 			break;
 		}
 	}
-	if( id == 20 ) return;
+	if( dialogId == -1 ) return;
 
 	//ダイアログの作成
-	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditObjectDialogProc );
+	g_hDlgObject = CreateDialog( g_hInst, MAKEINTRESOURCE(dialogId), g_hWnd, (DLGPROC)EditObjectDialogProc );
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgObject, IDC_COMBO_OBJECT );
 	for( i = 0 ; i < 13 ; ++i ) SendMessage( hwndCombo, CB_ADDSTRING, 0, (LPARAM)OBJ[i].Name );
@@ -2986,19 +3214,19 @@ void DisplayObjectDialog()
 				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) ){
 		SetDlgItemText( g_hDlgObject, IDC_EDIT_MESSAGE, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]] );
 	} else if( type == OBJECT_URLGATE ){
-		strcpy( str, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]] );
+		strcpy_s(str, MESSAGE_STR_MAX, g_StrMessage[objectAttribute[g_EditObjectData][ATR_STRING]]);
 		//文字列分割
 		for( i = 0 ; i < (int)strlen(str) ; ++i ){
 			if( (str[i] == 0x0D) && (str[i+1] == 0x0A) ){
 				str[i] = '\0';
-				strcpy( strCut, str+i+2 );
-				SetDlgItemText( g_hDlgObject, IDC_EDIT_TARGET, strCut );
+				strcpy_s(strCut, BUFFER_STR_MAX, str + i + 2);
+				SetDlgItemText(g_hDlgObject, IDC_EDIT_TARGET, strCut);
 				break;
 			}
 		}
 		SetDlgItemText( g_hDlgObject, IDC_EDIT_URL, str );
 	}
-	//数値データを挿入
+	// 数値データを挿入
 	for( number = 0 ; number < 100 ; ++number ){
 		if( Object[number].Object == END ) break;
 		if( Object[number].Object == type ){
@@ -3012,82 +3240,90 @@ void DisplayObjectDialog()
 						|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS)) ){
 				if( status > 30000 ) status = 30000 -status;
 			}
-			//ジャンプゲートの場合
+			// ジャンプゲートの場合
 			if( objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE ){
 				if( (Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y) ){
 					int position = objectAttribute[g_EditObjectData][Object[number].Atr];
 					if( position > 9000 ){
 						position = position - 10000;
-						if( position >= 0 ) sprintf( str, "+%d", position );
-						else sprintf( str, "%d", position );
-					} else {
-						sprintf( str, "%d", position );
+
+						CString jumpValue;
+						if (position >= 0) {
+							jumpValue.Format("+%d", position);
+						}
+						else {
+							jumpValue.Format("%d", position);
+						}
+						SetDlgItemText(g_hDlgObject, Object[number].Id, jumpValue);
 					}
-					SetDlgItemText( g_hDlgObject, Object[number].Id, str );
-				} else {
-					_itoa( objectAttribute[g_EditObjectData][Object[number].Atr], str, 10 );
-					SetDlgItemText( g_hDlgObject, Object[number].Id, str );
+					else {
+						SetDlgItemInt( g_hDlgObject, Object[number].Id, position, FALSE);
+					}
+				}
+				else {
+					SetDlgItemInt(g_hDlgObject, Object[number].Id, objectAttribute[g_EditObjectData][Object[number].Atr], FALSE);
 				}
 			}
-			//コンボボックスの場合
+			// コンボボックスの場合
 			else if( (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
 						|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER)) ){
 				hwndCombo = GetDlgItem( g_hDlgObject, Object[number].Id );
 				SendMessage( hwndCombo, CB_SETCURSEL, status, 0 );
 			}
-			//エディットボックスの場合
+			// エディットボックスの場合
 			else {
-				_itoa( status, str, 10 );
-				SetDlgItemText( g_hDlgObject, Object[number].Id, str );
+				SetDlgItemInt(g_hDlgObject, Object[number].Id, status, TRUE);
 			}
 		}
 	}
-	//ダイアログ移動
+	// ダイアログ移動
 	GetWindowRect( g_hDlgSelectObject, &rectBox );
 	GetWindowRect( g_hDlgObject, &rect );
 	MoveWindow( g_hDlgObject, rectBox.right, rectBox.top, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 	ShowWindow( g_hDlgObject, SW_SHOW );
 
-	//ダイアログの作成
+	// ダイアログの作成
 	if( (type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM)
 				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) || (type == OBJECT_LOCALGATE) ){
 		if( type == OBJECT_SELECT ) g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA2), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
 		else g_hDlgExtra = CreateDialog( g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EXTRA), g_hDlgObject, (DLGPROC)DialogProcExtraObject );
 
-		//ダイアログ移動
+		// ダイアログ移動
 		GetWindowRect( g_hDlgObject, &rectBox );
 		GetWindowRect( g_hDlgExtra, &rect );
 		MoveWindow( g_hDlgExtra, rectBox.left, rectBox.bottom, rect.right -rect.left, rect.bottom -rect.top, TRUE );
 		ShowWindow( g_hDlgExtra, SW_SHOW );
 
-		//フォーカス移動
+		// フォーカス移動
 		SetFocus( g_hDlgObject );
-		//拡張出現キャラクタの設定
+		// 拡張出現キャラクタの設定
 		AppearChara( g_EditObjectData, TRUE );
 	}
 
-	//タイトルバーテキスト設定
-	char title[100];
-	GetWindowText( g_hDlgObject, title, sizeof(title) );
-	sprintf( str, "o%d.  %s", g_EditObjectData, title );
-	SetWindowText( g_hDlgObject, str );
-	GetWindowText( g_hDlgExtra, title, sizeof(title) );
-	sprintf( str, "o%d.  %s", g_EditObjectData, title );
-	SetWindowText( g_hDlgExtra, str );
+	// タイトルバーテキスト設定
+	{
+		char title[BUFFER_STR_MAX];
+		GetWindowText(g_hDlgObject, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "o%d.  %s", g_EditObjectData, title);
+		SetWindowText(g_hDlgObject, str);
+
+		GetWindowText(g_hDlgExtra, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "o%d.  %s", g_EditObjectData, title);
+		SetWindowText(g_hDlgExtra, str);
+	}
 }
 
 
 
 //##------------------------------------------------------------------
 // 背景編集ダイアログの表示
-
 void DisplayMapDialog()
 {
 	int i;
 	int number;
 	char str[MESSAGE_STR_MAX];
 	char strCut[50];
-	int id;
+	int dialogId = -1;
 	int position;
 	int type;
 	RECT rect;
@@ -3109,14 +3345,14 @@ void DisplayMapDialog()
 	for( position = 0 ; position < 20 ; ++position ){
 		if( MAP[position].Object == END ) break;
 		if( type == MAP[position].Object ){
-			id = MAP[position].Id;
+			dialogId = MAP[position].Id;
 			break;
 		}
 	}
-	if( id == 20 ) return;
+	if( dialogId == -1 ) return;
 
 	//ダイアログの作成
-	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(id), g_hWnd, (DLGPROC)EditMapDialogProc );
+	g_hDlgMap = CreateDialog( g_hInst, MAKEINTRESOURCE(dialogId), g_hWnd, (DLGPROC)EditMapDialogProc );
 
 	//コンボボックスにデータ挿入
 	HWND hwndCombo = GetDlgItem( g_hDlgMap, IDC_COMBO_MAP );
@@ -3127,12 +3363,12 @@ void DisplayMapDialog()
 	if( (type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK) ){
 		SetDlgItemText( g_hDlgMap, IDC_EDIT_MESSAGE, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]] );
 	} else if( type == MAP_URLGATE ){
-		strcpy( str, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]] );
+		strcpy_s(str, MESSAGE_STR_MAX, g_StrMessage[mapAttribute[g_EditMapData][ATR_STRING]]);
 		//文字列分割
 		for( i = 0 ; i < (int)strlen(str) ; ++i ){
 			if( (str[i] == 0x0D) && (str[i+1] == 0x0A) ){
 				str[i] = '\0';
-				strcpy( strCut, str+i+2 );
+				strcpy_s(strCut, BUFFER_STR_MAX, str + i + 2);
 				SetDlgItemText( g_hDlgMap, IDC_EDIT_TARGET, strCut );
 				break;
 			}
@@ -3147,15 +3383,21 @@ void DisplayMapDialog()
 				int position = mapAttribute[g_EditMapData][Map[number].Atr];
 				if( position > 9000 ){
 					position = position - 10000;
-					if( position >= 0 ) sprintf( str, "+%d", position );
-					else sprintf( str, "%d", position );
-				} else {
-					sprintf( str, "%d", position );
+
+					CString jumpValue;
+					if (position >= 0) {
+						jumpValue.Format("+%d", position);
+					}
+					else {
+						jumpValue.Format("%d", position);
+					}
+					SetDlgItemText(g_hDlgMap, Map[number].Id, jumpValue);
 				}
-				SetDlgItemText( g_hDlgMap, Map[number].Id, str );
+				else {
+					SetDlgItemInt(g_hDlgMap, Map[number].Id, position, FALSE);
+				}
 			} else {
-				_itoa( mapAttribute[g_EditMapData][Map[number].Atr], str, 10 );
-				SetDlgItemText( g_hDlgMap, Map[number].Id, str );
+				SetDlgItemInt(g_hDlgMap, Map[number].Id, mapAttribute[g_EditMapData][Map[number].Atr], FALSE);
 			}
 		}
 	}
@@ -3180,103 +3422,114 @@ void DisplayMapDialog()
 	}
 	
 	//タイトルバーテキスト設定
-	char title[100];
-	GetWindowText( g_hDlgMap, title, sizeof(title) );
-	sprintf( str, "m%d.  %s", g_EditMapData, title );
-	SetWindowText( g_hDlgMap, str );
-	GetWindowText( g_hDlgExtra, title, sizeof(title) );
-	sprintf( str, "m%d.  %s", g_EditMapData, title );
-	SetWindowText( g_hDlgExtra, str );
+	{
+		char title[BUFFER_STR_MAX];
+		GetWindowText(g_hDlgMap, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "m%d.  %s", g_EditMapData, title);
+		SetWindowText(g_hDlgMap, str);
+
+		GetWindowText(g_hDlgExtra, title, sizeof(title));
+		sprintf_s(str, MESSAGE_STR_MAX, "m%d.  %s", g_EditMapData, title);
+		SetWindowText(g_hDlgExtra, str);
+	}
 }
 
 
 
 //##------------------------------------------------------------------
 // 物体データの決定
-
-void SetObjectData( HWND hWnd, int charaNumber )
+void SetObjectData(HWND hWnd, int charaNumber)
 {
 	int i;
 	int number;
 	int length;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
+	char strCut[BUFFER_STR_MAX];
 	int type = objectAttribute[charaNumber][ATR_TYPE];
 	int position;
 
 	//何も設定されていなければキャンセル
-	for( i = 0 ; i < OBJECT_ATR_MAX ; ++i ){
-		if( objectAttribute[charaNumber][i] != 0 ) break;
+	for (i = 0; i < OBJECT_ATR_MAX; ++i) {
+		if (objectAttribute[charaNumber][i] != 0) break;
 	}
-	if( i == OBJECT_ATR_MAX ) return;
+	if (i == OBJECT_ATR_MAX) return;
 
 	//パーツ番号
 	objectAttribute[charaNumber][ATR_0] = charaNumber;
 
-	if( (type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM) || (type == OBJECT_SCORE)
-				|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT) ){
+	if ((type == OBJECT_MESSAGE) || (type == OBJECT_MONSTER) || (type == OBJECT_ITEM) || (type == OBJECT_SCORE)
+		|| (type == OBJECT_STATUS) || (type == OBJECT_DOOR) || (type == OBJECT_SELL) || (type == OBJECT_BUY) || (type == OBJECT_SELECT)) {
 		//文字データのセット
-		GetDlgItemText( hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX );
-		SetMessageData( &objectAttribute[charaNumber][ATR_STRING], str );
-	} else if( type == OBJECT_URLGATE ){
-		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
-		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if( (strstr(strCut,"expand") != 0) || (strstr(strCut,"ＥＸＰＡＮＤ") != 0) ) strcpy( strCut, "EXPAND" );
-		if( strlen(strCut) != 0 ){
+		GetDlgItemText(hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX);
+		SetMessageData(&objectAttribute[charaNumber][ATR_STRING], str);
+	}
+	else if (type == OBJECT_URLGATE) {
+		GetDlgItemText(hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX);
+		GetDlgItemText(hWnd, IDC_EDIT_TARGET, strCut, 50);
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) {
+			strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
+		}
+		if (strlen(strCut) != 0) {
 			length = strlen(str);
 			str[length] = 0x0D;
-			str[length+1] = 0x0A;
-			str[length+2] = '\0';
-			strcat( str, strCut );
+			str[length + 1] = 0x0A;
+			str[length + 2] = '\0';
+			strcat_s(str, MESSAGE_STR_MAX, strCut);
 		}
-		SetMessageData( &objectAttribute[charaNumber][ATR_STRING], str );
+		SetMessageData(&objectAttribute[charaNumber][ATR_STRING], str);
 	}
 	//数値データを設定
-	for( number = 0 ; number < 100 ; ++number ){
-		if( Object[number].Object == END ) break;
-		if( Object[number].Object == type ){
-			GetDlgItemText( hWnd, Object[number].Id, str, sizeof(str) );
-			
+	for (number = 0; number < 100; ++number) {
+		if (Object[number].Object == END) break;
+		if (Object[number].Object == type) {
+			GetDlgItemText(hWnd, Object[number].Id, str, sizeof(str));
+
 			//マイナス数値の指定
-			if( ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_SELL))
-						|| ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_STRENGTH) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_DEFENCE) && (Object[number].Object == OBJECT_STATUS))
-						|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS)) ){
-				if( (atoi(str) < 0) && (atoi(str) >= -30000) ){
+			if (((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_SELL))
+				|| ((Object[number].Atr == ATR_ENERGY) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_STRENGTH) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_DEFENCE) && (Object[number].Object == OBJECT_STATUS))
+				|| ((Object[number].Atr == ATR_GOLD) && (Object[number].Object == OBJECT_STATUS))) {
+				if ((atoi(str) < 0) && (atoi(str) >= -30000)) {
 					objectAttribute[charaNumber][Object[number].Atr] = 30000 - atoi(str);
 					continue;
-				} else if( atoi(str) < -30000 ){
-					sprintf( str, "「%s」の数値範囲が規定値を超えています。\n -30000 以上を指定してください。", Object[number].Name );
-					MessageBox( g_hWnd, str, "警告！", MB_OK );
+				}
+				else if (atoi(str) < -30000) {
+					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n -30000 以上を指定してください。", Object[number].Name);
+					MessageBox(g_hWnd, str, "警告！", MB_OK);
 				}
 			}
-			if( (objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_SELL) && (Object[number].Atr == ATR_ITEM) ){
-				if( (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_ITEM) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_NORMAL) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_MESSAGE) ){
-					MessageBox( g_hWnd, "売るアイテムには、ステータス変化パーツなどのアイテム以外のパーツは指定できません。", "警告！", MB_OK );
+			if ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_SELL) && (Object[number].Atr == ATR_ITEM)) {
+				if ((objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_ITEM) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_NORMAL) && (objectAttribute[atoi(str)][ATR_TYPE] != OBJECT_MESSAGE)) {
+					MessageBox(g_hWnd, "売るアイテムには、ステータス変化パーツなどのアイテム以外のパーツは指定できません。", "警告！", MB_OK);
 					continue;
 				}
 			}
-			if( (objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE) && ((Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y)) ){
-				int position = atoi( str );
-				if( position >= g_iMapSize ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK );
-				} else if( (position < -100) || ((position > 100) && (str[0] == '+')) ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK );
-				} else {
-					if( (str[0] == '+') || (str[0] == '-') ) position += 10000;
+			if ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_LOCALGATE) && ((Object[number].Atr == ATR_JUMP_X) || (Object[number].Atr == ATR_JUMP_Y))) {
+				int position = atoi(str);
+				if (position >= g_iMapSize) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK);
+				}
+				else if ((position < -100) || ((position > 100) && (str[0] == '+'))) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK);
+				}
+				else {
+					if ((str[0] == '+') || (str[0] == '-')) position += 10000;
 					objectAttribute[charaNumber][Object[number].Atr] = position;
 				}
-			} else if( (Object[number].Max != 0) && ((Object[number].Max < atoi(str)) || (atoi(str) < 0)) ){
-				sprintf( str, "「%s」の数値範囲が規定値を超えています。\n 0以上 %d 以下を指定してください。", Object[number].Name, Object[number].Max );
-				MessageBox( g_hWnd, str, "警告！", MB_OK );
-			} else {
-				if( (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
-							|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER)) ){
+			}
+			else if ((Object[number].Max != 0) && ((Object[number].Max < atoi(str)) || (atoi(str) < 0))) {
+				sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上 %d 以下を指定してください。", Object[number].Name, Object[number].Max);
+				MessageBox(g_hWnd, str, "警告！", MB_OK);
+			}
+			else {
+				if ((objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_LOCALGATE) && (objectAttribute[g_EditObjectData][ATR_TYPE] != OBJECT_RANDOM) && ((Object[number].Atr == ATR_MOVE) || (Object[number].Atr == ATR_MODE))
+					|| ((objectAttribute[g_EditObjectData][ATR_TYPE] == OBJECT_DOOR) && (Object[number].Atr == ATR_NUMBER))) {
 					//コンボボックスのデータ
-					position = SendMessage( GetDlgItem(hWnd,Object[number].Id), CB_GETCURSEL, 0, 0 );
+					position = SendMessage(GetDlgItem(hWnd, Object[number].Id), CB_GETCURSEL, 0, 0);
 					objectAttribute[charaNumber][Object[number].Atr] = position;
-				} else {
+				}
+				else {
 					//エディットボックス
 					objectAttribute[charaNumber][Object[number].Atr] = atoi(str);
 				}
@@ -3289,14 +3542,13 @@ void SetObjectData( HWND hWnd, int charaNumber )
 
 //##------------------------------------------------------------------
 // 背景データの決定
-
 void SetMapData( HWND hWnd, int charaNumber )
 {
 	int i;
 	int number;
 	int length;
 	char str[MESSAGE_STR_MAX];
-	char strCut[50];
+	char strCut[BUFFER_STR_MAX];
 	int type = mapAttribute[charaNumber][ATR_TYPE];
 
 	//何も設定されていなければキャンセル
@@ -3308,44 +3560,51 @@ void SetMapData( HWND hWnd, int charaNumber )
 	//パーツ番号
 	mapAttribute[charaNumber][ATR_0] = charaNumber;
 
-	if( (type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK) ){
+	if ((type == MAP_STREET) || (type == MAP_WALL) || (type == MAP_ITEMCHECK)) {
 		//文字データのセット
-		GetDlgItemText( hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX );
-		SetMessageData( &mapAttribute[charaNumber][ATR_STRING], str );
-	} else if( type == MAP_URLGATE ){
-		GetDlgItemText( hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX );
-		GetDlgItemText( hWnd, IDC_EDIT_TARGET, strCut, 50 );
-		if( (strstr(strCut,"expand") != 0) || (strstr(strCut,"ＥＸＰＡＮＤ") != 0) ) strcpy( strCut, "EXPAND" );
-		if( strlen(strCut) != 0 ){
+		GetDlgItemText(hWnd, IDC_EDIT_MESSAGE, str, MESSAGE_STR_MAX);
+		SetMessageData(&mapAttribute[charaNumber][ATR_STRING], str);
+	}
+	else if (type == MAP_URLGATE) {
+		GetDlgItemText(hWnd, IDC_EDIT_URL, str, MESSAGE_STR_MAX);
+		GetDlgItemText(hWnd, IDC_EDIT_TARGET, strCut, 50);
+		if ((strstr(strCut, "expand") != 0) || (strstr(strCut, "ＥＸＰＡＮＤ") != 0)) {
+			strcpy_s(strCut, BUFFER_STR_MAX, "EXPAND");
+		}
+		if (strlen(strCut) != 0) {
 			length = strlen(str);
 			str[length] = 0x0D;
-			str[length+1] = 0x0A;
-			str[length+2] = '\0';
-			strcat( str, strCut );
+			str[length + 1] = 0x0A;
+			str[length + 2] = '\0';
+			strcat_s(str, MESSAGE_STR_MAX, strCut);
 		}
-		SetMessageData( &mapAttribute[charaNumber][ATR_STRING], str );
+		SetMessageData(&mapAttribute[charaNumber][ATR_STRING], str);
 	}
 	//数値データを設定
-	for( number = 0 ; number < 100 ; ++number ){
-		if( Map[number].Object == END ) break;
-		if( Map[number].Object == type ){
-			GetDlgItemText( hWnd, Map[number].Id, str, sizeof(str) );
-			if( (Map[number].Atr == ATR_JUMP_X) || (Map[number].Atr == ATR_JUMP_Y) ){
-				int position = atoi( str );
-				if( position >= g_iMapSize ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK );
-				} else if( (position < -100) || ((position > 100) && (str[0] == '+')) ){
-					MessageBox( g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK );
-				} else {
-					if( (str[0] == '+') || (str[0] == '-') ) position += 10000;
+	for (number = 0; number < 100; ++number) {
+		if (Map[number].Object == END) break;
+		if (Map[number].Object == type) {
+			GetDlgItemText(hWnd, Map[number].Id, str, sizeof(str));
+			if ((Map[number].Atr == ATR_JUMP_X) || (Map[number].Atr == ATR_JUMP_Y)) {
+				int position = atoi(str);
+				if (position >= g_iMapSize) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n マップサイズ以下を指定してください。", "警告！", MB_OK);
+				}
+				else if ((position < -100) || ((position > 100) && (str[0] == '+'))) {
+					MessageBox(g_hWnd, "「座標」の数値範囲が規定値を超えています。\n -100以上、100以下を指定してください。", "警告！", MB_OK);
+				}
+				else {
+					if ((str[0] == '+') || (str[0] == '-')) position += 10000;
 					mapAttribute[charaNumber][Map[number].Atr] = position;
 				}
-			} else {
-				if( (Map[number].Max != 0) && ((Map[number].Max < atoi(str)) || (atoi(str) < 0)) ){
-					sprintf( str, "「%s」の数値範囲が規定値を超えています。\n 0以上、%d以下を指定してください。", Map[number].Name, Map[number].Max );
-					MessageBox( g_hWnd, str, "警告！", MB_OK );
-				} else {
-					mapAttribute[charaNumber][Map[number].Atr] = atoi( str );
+			}
+			else {
+				if ((Map[number].Max != 0) && ((Map[number].Max < atoi(str)) || (atoi(str) < 0))) {
+					sprintf_s(str, MESSAGE_STR_MAX, "「%s」の数値範囲が規定値を超えています。\n 0以上、%d以下を指定してください。", Map[number].Name, Map[number].Max);
+					MessageBox(g_hWnd, str, "警告！", MB_OK);
+				}
+				else {
+					mapAttribute[charaNumber][Map[number].Atr] = atoi(str);
 				}
 			}
 		}
@@ -3363,7 +3622,7 @@ void AppearChara( int mapNumber, BOOL flag )
 	int dataChara;
 	int dataMode;
 	int x, y;
-	char str[30];
+	char str[NUMBER_STR_MAX];
 
 	//拡張キャラクタ・データコンバート
 	for( i = 0 ; i < 10 ; ++i ){
@@ -3400,12 +3659,12 @@ void AppearChara( int mapNumber, BOOL flag )
 			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], "P" );
 		} else if( x > 9000 ){
 			x -= 10000;
-			sprintf( str, "%d", x );
-			if( x >= 0 ) sprintf( str, "+%d", x );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", x);
+			if (x >= 0) sprintf_s(str, NUMBER_STR_MAX, "+%d", x);
 			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], str );
 		} else {
-			sprintf( str, "%d", x );
-			SetDlgItemText( g_hDlgExtra, g_EditId[10+i], str );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", x);
+			SetDlgItemText(g_hDlgExtra, g_EditId[10 + i], str);
 		}
 		
 		//y = y >> 8;
@@ -3413,15 +3672,15 @@ void AppearChara( int mapNumber, BOOL flag )
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], "P" );
 		} else if( y > 9000 ){
 			y -= 10000;
-			sprintf( str, "%d", y );
-			if( y >= 0 ) sprintf( str, "+%d", y );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", y);
+			if (y >= 0) sprintf_s(str, NUMBER_STR_MAX, "+%d", y);
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], str );
 		} else {
-			sprintf( str, "%d", y );
+			sprintf_s(str, NUMBER_STR_MAX, "%d", y);
 			SetDlgItemText( g_hDlgExtra, g_EditId[20+i], str );
 		}
 		
-		sprintf( str, "%d", dataChara );
+		sprintf_s(str, NUMBER_STR_MAX, "%d", dataChara);
 		SetDlgItemText( g_hDlgExtra, g_EditId[i], str );
 	}
 }
@@ -3436,13 +3695,13 @@ void SetAppearChara( int mapNumber, BOOL flag )
 	int i;
 	int dataChara;
 	int x, y;
-	char str[30];
-	char partsNumberStr[30];
+	char str[NUMBER_STR_MAX];
+	char partsNumberStr[NUMBER_STR_MAX];
 
 	//拡張キャラクタ・データコンバート
 	for( i = 0 ; i < 10 ; ++i ){
 		GetDlgItemText( g_hDlgExtra, g_EditId[i], str, sizeof(str) );
-		strcpy( partsNumberStr, str );
+		strcpy_s(partsNumberStr, NUMBER_STR_MAX, str);
 
 		// プラスマイナス記号によるパーツ番号インクリメント・デクリメント
 		if (str[0] == '+') {
@@ -3585,7 +3844,9 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				else if ((atol(g_worldPassword) < 1000) && (atol(g_worldPassword) > 0)) {
 					MessageBox(hWnd, "拡張クラスを使用しない場合や、ＣＧＩ によるステータス引継ぎをおこなわない場合は、\n保守のため暗証番号はなるべく４桁以上にしておくことをお勧めします。\n拡張クラスからの起動やステータス引継ぎができないようになります。", "推奨", MB_OK);
 				}
-				if (g_worldPassword[0] != '\0') ltoa(atol(g_worldPassword), g_worldPassword, 10);
+				if (g_worldPassword[0] != '\0') {
+					_ltoa_s(atol(g_worldPassword), g_worldPassword, 10);
+				}
 
 				GetDlgItemText(g_hDlgFoundation, IDC_COMBO_BMP, g_mapcgNameBmp, sizeof(g_mapcgNameBmp));
 				GetDlgItemText(g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName, sizeof(g_mapcgName));
@@ -3602,12 +3863,14 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				else {
 					if (strcmp(g_mapcgNameBmp, g_mapcgOld) != 0) LoadBitmap();
 				}
+				CreateMiniMap();
 				InvalidateRect(g_hWnd, NULL, FALSE);
+				InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 				g_bUpdate = TRUE;
 			}
 			//戦闘結果の計算
 			else if (hWnd == g_hDlgCalculate) {
-				char str[50];
+				char str[NUMBER_STR_MAX];
 				int strength, defence, energy;
 				int strengthM, defenceM, energyM;
 				int damagy = 0;
@@ -3648,16 +3911,16 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 						}
 					}
 				}
-				if (turn == 0) sprintf(str, "攻撃ターン数　--");
-				else sprintf(str, "攻撃ターン数　%d", turn);
+				if (turn == 0) sprintf_s(str, NUMBER_STR_MAX, "攻撃ターン数　--");
+				else sprintf_s(str, NUMBER_STR_MAX, "攻撃ターン数　%d", turn);
 				SetDlgItemText(hWnd, IDC_STATIC_TURN, str);
-				sprintf(str, "プレーヤー　%d", damagy);
+				sprintf_s(str, NUMBER_STR_MAX, "プレーヤー　%d", damagy);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT1, str);
-				sprintf(str, "モンスター　%d", damagyM);
+				sprintf_s(str, NUMBER_STR_MAX, "モンスター　%d", damagyM);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT2, str);
-				sprintf(str, "プレーヤー　%d", attack);
+				sprintf_s(str, NUMBER_STR_MAX, "プレーヤー　%d", attack);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT3, str);
-				sprintf(str, "モンスター　%d", attackM);
+				sprintf_s(str, NUMBER_STR_MAX, "モンスター　%d", attackM);
 				SetDlgItemText(hWnd, IDC_STATIC_RESULT4, str);
 			}
 			return 1;
@@ -3668,31 +3931,33 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		// マップサイズ拡張
 		else if (LOWORD(wParam) == IDC_BUTTON_MAPSIZE) {
-			char szStr[50];
+			char szStr[NUMBER_STR_MAX];
 			g_iMapSize += 50;
 			if (g_iMapSize > MAP_SIZE_MAX) g_iMapSize = MAP_SIZE_MAX;
-			sprintf(szStr, "%d×%d", g_iMapSize, g_iMapSize);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d×%d", g_iMapSize, g_iMapSize);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, szStr);
 			// スクロールバー設定
 			SetScrollRange(g_hWnd, SB_VERT, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
 			SetScrollRange(g_hWnd, SB_HORZ, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
+			SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, (g_iMapSize - MINIMAP_HEIGHT), FALSE);
+			SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, (g_iMapSize - MINIMAP_WIDTH), FALSE);
 		}
 		// 背景パーツ最大数拡張
 		else if (LOWORD(wParam) == IDC_BUTTON_MAP_PARTS) {
 			g_iMapPartsMax += 50;
 			if (g_iMapPartsMax > PARTS_NUMBER_MAX) g_iMapPartsMax = PARTS_NUMBER_MAX;
-			SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / 10) - 3), FALSE);
+			SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / DIALOG_MAP_SELECT_COLUMN) - DIALOG_MAP_SELECT_LINE), FALSE);
 			char szStr[50];
-			sprintf(szStr, "%d", g_iMapPartsMax);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d", g_iMapPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, szStr);
 		}
 		// 物体パーツ最大数拡張
 		else if (LOWORD(wParam) == IDC_BUTTON_OBJ_PARTS) {
 			g_iObjectPartsMax += 50;
 			if (g_iObjectPartsMax > PARTS_NUMBER_MAX) g_iObjectPartsMax = PARTS_NUMBER_MAX;
-			SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / 10) - 3), FALSE);
+			SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / DIALOG_OBJECT_SELECT_COLUMN) - DIALOG_OBJECT_SELECT_LINE), FALSE);
 			char szStr[50];
-			sprintf(szStr, "%d", g_iObjectPartsMax);
+			sprintf_s(szStr, NUMBER_STR_MAX, "%d", g_iObjectPartsMax);
 			SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, szStr);
 		}
 		break;
@@ -3732,7 +3997,9 @@ LRESULT CALLBACK DialogProcBasicMes(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			//指定文字列修正
 			int i;
 			for (i = 5; i <= 9; ++i) {
-				if ((strstr(g_StrMessage[i], "blank") != 0) || (strstr(g_StrMessage[i], "ＢＬＡＮＫ") != 0) || (strstr(g_StrMessage[i], "BLANK") != 0)) strcpy(g_StrMessage[i], "BLANK");
+				if ((strstr(g_StrMessage[i], "blank") != 0) || (strstr(g_StrMessage[i], "ＢＬＡＮＫ") != 0) || (strstr(g_StrMessage[i], "BLANK") != 0)) {
+					strcpy_s(g_StrMessage[i], MESSAGE_STR_MAX, "BLANK");
+				}
 			}
 			DestroyWindow(hWnd);
 			return 1;
@@ -3746,6 +4013,190 @@ LRESULT CALLBACK DialogProcBasicMes(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	return 0;
 }
 
+//##------------------------------------------------------------------
+// ミニマップダイアログプロシージャ
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+
+	case WM_INITDIALOG:
+		SetScrollRange(hWnd, SB_VERT, 0, g_iMapSize - MINIMAP_HEIGHT, FALSE);
+		SetScrollRange(hWnd, SB_HORZ, 0, g_iMapSize - MINIMAP_WIDTH, FALSE);
+		g_MiniMapTracking = {
+			sizeof(TRACKMOUSEEVENT),
+			TME_LEAVE,
+			hWnd
+		};
+		break;
+
+	case WM_LBUTTONDOWN: {
+		g_MapJumping = TRUE;
+		TrackMouseEvent(&g_MiniMapTracking);
+
+		JumpMapFromMiniMap(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+	}
+
+	case WM_MOUSEMOVE: {
+		if (g_MapJumping == FALSE) {
+			break;
+		}
+
+		const int x = GET_X_LPARAM(lParam);
+		const int y = GET_Y_LPARAM(lParam);
+		JumpMapFromMiniMap(hWnd, x, y);
+		break;
+	}
+	
+	case WM_MOUSELEAVE:
+	case WM_LBUTTONUP:
+		g_MapJumping = FALSE;
+		break;
+
+	case WM_HSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (minimapXtop < g_iMapSize - MINIMAP_WIDTH) ++minimapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (minimapXtop > 0) --minimapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			minimapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			minimapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (minimapXtop <= g_iMapSize - MINIMAP_WIDTH - 5) minimapXtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (minimapXtop >= 5) minimapXtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
+	case WM_VSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (minimapYtop < g_iMapSize - MINIMAP_HEIGHT) ++minimapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (minimapYtop > 0) --minimapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			minimapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			minimapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (minimapYtop <= g_iMapSize - MINIMAP_HEIGHT - 5) minimapYtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (minimapYtop >= 5) minimapYtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
+	case WM_MOUSEWHEEL: {
+		int scrollSize;
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollSize, 0);
+		// スクロールサイズはスクロール行数の2倍の量
+		scrollSize *= 2;
+		// 横方向
+		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
+			if (scrollDelta < 0) {
+				minimapXtop += scrollSize;
+				if (minimapXtop > (g_iMapSize - MINIMAP_WIDTH)) {
+					minimapXtop = g_iMapSize - MINIMAP_WIDTH;
+				}
+			}
+			else if (scrollDelta > 0) {
+				minimapXtop -= scrollSize;
+				if (minimapXtop < 0) {
+					minimapXtop = 0;
+				}
+			}
+			SetScrollPos(hWnd, SB_HORZ, minimapXtop, 1);
+		}
+		// 縦方向
+		else {
+			if (scrollDelta < 0) {
+				minimapYtop += scrollSize;
+				if (minimapYtop > (g_iMapSize - MINIMAP_HEIGHT)) {
+					minimapYtop = g_iMapSize - MINIMAP_HEIGHT;
+				}
+			}
+			else if (scrollDelta > 0) {
+				minimapYtop -= scrollSize;
+				if (minimapYtop < 0) {
+					minimapYtop = 0;
+				}
+			}
+			SetScrollPos(hWnd, SB_VERT, minimapYtop, 1);
+		}
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
+
+	case WM_COMMAND:
+		if (wParam == IDCANCEL) {
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_ENABLED);
+			ShowWindow(hWnd, FALSE);
+		}
+		break;
+
+	case WM_PAINT:
+		PaintMinimap(hWnd);
+		break;
+	}
+	return 0;
+}
+
+// クリック座標からマップの位置を移動
+void JumpMapFromMiniMap(HWND hWnd, int mouseX, int mouseY) {
+	int x = minimapXtop;
+	int y = minimapYtop;
+	// 座標をミニマップ座標単位で計算 (そのまま割ることは用途上適していないため)
+	{
+		for (int mouseXStock = mouseX; mouseXStock > 0; mouseXStock -= minimapChipSize) {
+			x++;
+		}
+		for (int mouseYStock = mouseY; mouseYStock > 0; mouseYStock -= minimapChipSize) {
+			y++;
+		}
+	}
+
+	mapXtop = x - 5;
+	mapYtop = y - 5;
+	if (mapXtop < 0) {
+		mapXtop = 0;
+	}
+	else if (mapXtop + 11 > g_iMapSize) {
+		mapXtop = g_iMapSize - 11;
+	}
+	if (mapYtop < 0) {
+		mapYtop = 0;
+	}
+	else if (mapYtop + 11 > g_iMapSize) {
+		mapYtop = g_iMapSize - 11;
+	}
+
+	InvalidateRect(g_hWnd, NULL, FALSE);
+	InvalidateRect(hWnd, NULL, FALSE);
+}
 
 
 //##------------------------------------------------------------------
@@ -3901,7 +4352,7 @@ void SetMessageData(int* point, char* str)
 		}
 		*point = number;
 		//メッセージ格納
-		strcpy(g_StrMessage[*point], str);
+		strcpy_s(g_StrMessage[*point], MESSAGE_STR_MAX, str);
 	}
 	else if (strlen(str) == 0) {
 		g_StrMessage[*point][0] = '\0';
@@ -3909,7 +4360,7 @@ void SetMessageData(int* point, char* str)
 	}
 	else {
 		//メッセージ格納
-		strcpy(g_StrMessage[*point], str);
+		strcpy_s(g_StrMessage[*point], MESSAGE_STR_MAX, str);
 	}
 }
 
@@ -3957,10 +4408,10 @@ void MakeNewMap()
 	g_mapcgNameBmp[0] = '\0';
 	g_mapcgName[0] = '\0';
 	g_mapcgOld[0] = '\0';
-	strcpy(g_szSelectFile, "newmap.dat");
+	strcpy_s(g_szSelectFile, FILE_PATH_STR_MAX, "newmap.dat");
 	//タイトルテキスト設定
-	char sTitle[100];
-	sprintf(sTitle, "%s [%s]", g_szTitleName, g_szSelectFile);
+	char sTitle[BUFFER_STR_MAX];
+	sprintf_s(sTitle, BUFFER_STR_MAX, "%s [%s]", g_szTitleName, g_szSelectFile);
 	SetWindowText(g_hWnd, sTitle);
 
 	//基本設定の編集
@@ -3971,6 +4422,7 @@ void MakeNewMap()
 	InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 	InvalidateRect(g_hDlgQuickView, NULL, FALSE);
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 
 	MessageBox(g_hWnd, "マップを新規作成しました。\n画面には何も表示されなくなりますがこれで正常です。\n使用するＧＩＦ画像ファイルを選択後、\n新たにパーツを作成してマップに配置していってください。", "マップの新規作成", MB_OK);
 }
@@ -3981,29 +4433,19 @@ void MakeNewMap()
 // 基本設定ダイアログ
 void EditMapFoundation()
 {
-	char str[100];
 	DestroyWindow(g_hDlgFoundation);
 	g_hDlgFoundation = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_FOUNDATION), g_hWnd, (DLGPROC)DialogProc);
 
 	//数値データ挿入
-	_itoa(statusEnergyMax, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_ENERGYMAX, str);
-	_itoa(statusEnergy, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIENERGY, str);
-	_itoa(statusStrength, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INISTRENGTH, str);
-	_itoa(statusDefence, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIDEFENCE, str);
-	_itoa(statusGold, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIGOLD, str);
-	_itoa(charaX, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIX, str);
-	_itoa(charaY, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_INIY, str);
-	_itoa(gameoverXp, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_GVX, str);
-	_itoa(gameoverYp, str, 10);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_GVY, str);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_ENERGYMAX, statusEnergyMax, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIENERGY, statusEnergy, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INISTRENGTH, statusStrength, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIDEFENCE, statusDefence, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIGOLD, statusGold, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIX, charaX, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_INIY, charaY, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_GVX, gameoverXp, FALSE);
+	SetDlgItemInt(g_hDlgFoundation, IDC_EDIT_GVY, gameoverYp, FALSE);
 
 	//テキストデータ挿入
 	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_WORLDNAME, g_worldName);
@@ -4020,12 +4462,21 @@ void EditMapFoundation()
 	SetDlgItemText(g_hDlgFoundation, IDC_COMBO_GIF, g_mapcgName);
 
 	//各種サイズデータ挿入
-	sprintf(str, "%d×%d", g_iMapSize, g_iMapSize);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, str);
-	sprintf(str, "%d", g_iMapPartsMax);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, str);
-	sprintf(str, "%d", g_iObjectPartsMax);
-	SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, str);
+	{
+		CString mapSizeStr;
+		mapSizeStr.Format("%d×%d", g_iMapSize, g_iMapSize);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAPSIZE, mapSizeStr);
+	}
+	{
+		CString mapPartsMaxStr;
+		mapPartsMaxStr.Format("%d", g_iMapPartsMax);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_MAP_PARTS, mapPartsMaxStr);
+	}
+	{
+		CString objectPartsMaxStr;
+		objectPartsMaxStr.Format("%d", g_iObjectPartsMax);
+		SetDlgItemText(g_hDlgFoundation, IDC_EDIT_OBJ_PARTS, objectPartsMaxStr);
+	}
 }
 
 
@@ -4263,25 +4714,43 @@ BOOL ReadGifImage()
 	int cxPerInch;
 	int cyPerInch;
 	long dx, dy;
-	char szStr[300];
 
 	//初期化
 	g_iColorTp = 0;
 	g_bFileNotFound = FALSE;
 
 	//画像ファイル読み込み
-	if ((han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE) {
-		sprintf(szStr, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
-		MessageBox(g_hWnd, szStr, "注意", MB_OK);
-		g_bFileNotFound = TRUE;
+	try {
+		han = CreateFile(g_mapcgName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (han == INVALID_HANDLE_VALUE) {
+			throw TRUE;
+		}
+		siz = GetFileSize(han, NULL);
+		hgb = GlobalAlloc(GPTR, siz);
+		BOOL readResult = ReadFile(han, hgb, siz, &dw, NULL);
+		if (readResult == FALSE) {
+			throw FALSE;
+		}
+		CloseHandle(han);
+
+		//ストリームを作成
+		HRESULT streamResult;
+		streamResult = CreateStreamOnHGlobal(hgb, TRUE, &ist);
+		if (streamResult == E_INVALIDARG || streamResult == E_OUTOFMEMORY) {
+			throw FALSE;
+		}
+	}
+	// 画像データの読込に失敗した場合
+	catch (BOOL fileNotFound)
+	{
+		g_bFileNotFound = fileNotFound;
+
+		char errorStr[FILE_PATH_STR_MAX];
+		sprintf_s(errorStr, FILE_PATH_STR_MAX, "GIF画像ファイル「%s」がオープンできません。\nファイルが存在するか、他のアプリケーションにより使用されていないかを確認してください。", g_mapcgName);
+		MessageBox(g_hWnd, errorStr, "注意", MB_OK);
 		return FALSE;
 	}
-	siz = GetFileSize(han, NULL);
-	hgb = GlobalAlloc(GPTR, siz);
-	ReadFile(han, hgb, siz, &dw, NULL);
-	CloseHandle(han);
-	//ストリームを作成
-	CreateStreamOnHGlobal(hgb, TRUE, &ist);
+
 	//イメージをロード
 	OleLoadPicture(ist, siz, TRUE, IID_IPicture, (LPVOID*)& ipi);
 
