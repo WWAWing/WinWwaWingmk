@@ -87,6 +87,7 @@
 #define PARTS_NUMBER_MAX	4000
 #define FILE_DATA_MAX		(4000 +1000 +1000) *1024	//（マップ＋パーツ＋メッセージ領域）
 #define MESSAGE_NUMBER_MAX	5000
+#define MESSAGE_FIRST_CHARA	10
 
 #define MESSAGE_STR_MAX		1500+10
 #define MAP_ATR_MAX			60
@@ -1700,7 +1701,8 @@ BOOL LoadMapData(char* FileName)
 
 	// 各メッセージデータが利用されているか確認する配列
 	BOOL usedMessage[MESSAGE_NUMBER_MAX];
-	for (i = 0; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
+	for (i = 0; i < MESSAGE_FIRST_CHARA; ++i) usedMessage[i] = TRUE;
+	for (; i < MESSAGE_NUMBER_MAX; ++i) usedMessage[i] = FALSE;
 
 	if (g_MapData[DATA_VERSION] <= 29) {
 		g_iMapAtrMax = 40;
@@ -3941,7 +3943,7 @@ void SetMessageData(int* point, char* str)
 
 	//メッセージナンバー設定
 	if ((strlen(str) > 0) && (*point == 0)) {
-		for (number = 10; number < MESSAGE_NUMBER_MAX; ++number) {
+		for (number = MESSAGE_FIRST_CHARA; number < MESSAGE_NUMBER_MAX; ++number) {
 			for (i = 0; i < PARTS_NUMBER_MAX; ++i) {
 				if ((objectAttribute[i][ATR_STRING] == number) || (mapAttribute[i][ATR_STRING] == number)) {
 					break;
