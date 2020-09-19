@@ -104,9 +104,9 @@
 #define CHIP_SIZE			40
 
 // パーツ選択ダイアログで表示するパーツ行数 (リソースファイルの変更も忘れずに)
-#define DIALOG_OBJECT_SELECT_LINE	4
+#define DIALOG_OBJECT_SELECT_LINE	5
 #define DIALOG_OBJECT_SELECT_COLUMN	10
-#define DIALOG_MAP_SELECT_LINE		4
+#define DIALOG_MAP_SELECT_LINE		5
 #define DIALOG_MAP_SELECT_COLUMN	10
 
 int DATA_MAP_COUNT;
