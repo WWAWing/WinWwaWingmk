@@ -843,7 +843,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		// カーソルキー操作
 		if (GetActiveWindow() == g_hDlgSelectMap) {
 			if (LOWORD(wParam) == ID_MENU_DOWN) {
-				if (g_ScrMap < ((g_iMapPartsMax / 10) - 3)) ++g_ScrMap;
+				if (g_ScrMap < ((g_iMapPartsMax / DIALOG_MAP_SELECT_COLUMN) - DIALOG_MAP_SELECT_LINE)) ++g_ScrMap;
 				SetScrollPos(g_hDlgSelectMap, SB_VERT, g_ScrMap, 1);
 				InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 				break;
@@ -857,7 +857,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		else if (GetActiveWindow() == g_hDlgSelectObject) {
 			if (LOWORD(wParam) == ID_MENU_DOWN) {
-				if (g_ScrObject < ((g_iObjectPartsMax / 10) - 3)) ++g_ScrObject;
+				if (g_ScrObject < ((g_iObjectPartsMax / DIALOG_OBJECT_SELECT_COLUMN) - DIALOG_OBJECT_SELECT_LINE)) ++g_ScrObject;
 				SetScrollPos(g_hDlgSelectObject, SB_VERT, g_ScrObject, 1);
 				InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 				break;
@@ -1684,8 +1684,8 @@ BOOL LoadMapData(char* FileName)
 	g_iObjectPartsMax = ((iDataObjectCount - 1) / 50) * 50 + 50;
 	if (g_iObjectPartsMax < 200) g_iObjectPartsMax = 200;
 	// スクロールバー設定
-	SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / 10) - 3), FALSE);
-	SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / 10) - 3), FALSE);
+	SetScrollRange(g_hDlgSelectMap, SB_VERT, 0, ((g_iMapPartsMax / DIALOG_MAP_SELECT_COLUMN) - DIALOG_MAP_SELECT_LINE), FALSE);
+	SetScrollRange(g_hDlgSelectObject, SB_VERT, 0, ((g_iObjectPartsMax / DIALOG_OBJECT_SELECT_COLUMN) - DIALOG_OBJECT_SELECT_LINE), FALSE);
 
 	ZeroMemory(&map, sizeof(map));
 	ZeroMemory(&mapObject, sizeof(mapObject));
