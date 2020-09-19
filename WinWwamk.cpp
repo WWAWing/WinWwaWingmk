@@ -102,11 +102,14 @@
 #define SCREEN_CHIP_SIZE	11
 // 1チップのサイズ (ピクセル単位)
 #define CHIP_SIZE			40
+#define MINIMAP_SIZE_DIVIDE	4
+#define MINIMAP_WIDTH		41
+#define MINIMAP_HEIGHT		21
 
 // パーツ選択ダイアログで表示するパーツ行数 (リソースファイルの変更も忘れずに)
-#define DIALOG_OBJECT_SELECT_LINE	5
+#define DIALOG_OBJECT_SELECT_LINE	4
 #define DIALOG_OBJECT_SELECT_COLUMN	10
-#define DIALOG_MAP_SELECT_LINE		5
+#define DIALOG_MAP_SELECT_LINE		4
 #define DIALOG_MAP_SELECT_COLUMN	10
 
 int DATA_MAP_COUNT;
@@ -132,6 +135,10 @@ char g_mapcgOld[BUFFER_STR_MAX];
 int mapX, mapY;
 int mapXtop = 0;
 int mapYtop = 0;
+int minimapXtop = 0;
+int minimapYtop = 0;
+
+const int minimapChipSize = CHIP_SIZE / MINIMAP_SIZE_DIVIDE;
 
 //ステータス
 int statusEnergyMax;
@@ -144,7 +151,7 @@ int itemDefence;
 int gameoverXp;
 int gameoverYp;
 
-//マップデータ
+// マップデータ
 short map[MAP_SIZE_MAX][MAP_SIZE_MAX];
 short mapObject[MAP_SIZE_MAX][MAP_SIZE_MAX];
 int objectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
@@ -153,7 +160,7 @@ int pointer;
 int itemBox[12];
 int StockObjectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
 int StockMapAttribute[PARTS_NUMBER_MAX][MAP_ATR_MAX];
-//Undo用
+// Undo用
 short UndoMap[MAP_SIZE_MAX][MAP_SIZE_MAX];
 short UndoMapObject[MAP_SIZE_MAX][MAP_SIZE_MAX];
 int UndoObjectAttribute[PARTS_NUMBER_MAX][OBJECT_ATR_MAX];
@@ -161,7 +168,7 @@ int UndoMapAttribute[PARTS_NUMBER_MAX][MAP_ATR_MAX];
 
 unsigned char *UndoMapB;
 
-//複写用
+// 複写用
 int g_CopyObject[OBJECT_ATR_MAX];
 int g_CopyMap[MAP_ATR_MAX];
 char g_CopyObjectStr[MESSAGE_STR_MAX];
@@ -169,23 +176,23 @@ char g_CopyMapStr[MESSAGE_STR_MAX];
 short g_MapBuffer[SCREEN_CHIP_SIZE][SCREEN_CHIP_SIZE];
 short g_ObjectBuffer[SCREEN_CHIP_SIZE][SCREEN_CHIP_SIZE];
 
-//物体選択用
+// 物体選択用
 int g_SelectObjectX, g_SelectObjectY;
 int g_ScrObject = 0;
 int g_SelectObjectData;
 int g_EditObjectData;
-//背景選択用
+// 背景選択用
 int g_SelectMapX, g_SelectMapY;
 int g_ScrMap = 0;
 int g_SelectMapData;
 int g_EditMapData;
-//キャラクタＣＧ選択用
+// キャラクタＣＧ選択用
 int g_ScrCGChara = 0;
 int g_ScrCGCharaMax = 10;
 int g_hModeSelectChara;
 int g_iLoadCGHeight = 800;
 
-//汎用
+// 汎用
 CDib	*g_pDib;
 HINSTANCE	g_hInst;
 HWND 	g_hWnd;
@@ -199,30 +206,43 @@ HWND	g_hDlgFoundation = NULL;
 HWND	g_hDlgCalculate = NULL;
 HWND	g_hDlgQuickView = NULL;
 HWND	g_hDlgBasicMes = NULL;
+HWND	g_hDlgMiniMap = NULL;
 HDC		g_hmDC = NULL;
 HDC		g_hmDCHalf = NULL;
 HDC		g_hmDCAnd = NULL;
 HDC		g_hmDCOr = NULL;
 HDC		g_hmDCExtra = NULL;
+HDC		g_hmDCMini = NULL;
+HDC		g_hmDCMiniAnd = NULL;
+HDC		g_hmDCMiniOr = NULL;
+HDC		g_hmDCMiniMap = NULL;
 HBITMAP	g_hBitmap = NULL;
 HBITMAP	g_hBitmapHalf = NULL;
 HBITMAP	g_hBitmapGif = NULL;
 HBITMAP	g_hBitmapAnd = NULL;
 HBITMAP	g_hBitmapOr = NULL;
 HBITMAP	g_hBitmapExtra = NULL;
+HBITMAP g_hBitmapMini = NULL;
+HBITMAP g_hBitmapMiniAnd = NULL;
+HBITMAP g_hBitmapMiniOr = NULL;
+HBITMAP g_hBitmapMiniMap = NULL;
 
-int g_AtrSelectChara;	//ＣＧ選択用
+TRACKMOUSEEVENT g_MapEditTracking;
+TRACKMOUSEEVENT g_MiniMapTracking;
+
+int g_AtrSelectChara;	// ＣＧ選択用
 int g_EditMode;
 
-//フラグ
+// フラグ
 BOOL g_bRestoreObjectDialog = FALSE;
 BOOL g_bRestoreMapDialog = FALSE;
-BOOL g_MapLineFlag = TRUE;		//境界線
-BOOL g_ObjectNumberFlag = TRUE;	//物体パーツ番号表示
-BOOL g_MouseDrag = FALSE;		//マウスのドラッグ判定用
-BOOL g_bLoadGif = TRUE;			//GIFファイルが読み込めるか？
-BOOL g_bUpdate = FALSE;			//更新確認フラグ
-BOOL g_bInitial = FALSE;		//初期化済みか？
+BOOL g_MapLineFlag = TRUE;		// 境界線
+BOOL g_ObjectNumberFlag = TRUE;	// 物体パーツ番号表示
+BOOL g_MouseDrag = FALSE;		// マウスのドラッグ判定用
+BOOL g_MapJumping = FALSE;		// ミニマップのマウスドラッグ判定用
+BOOL g_bLoadGif = TRUE;			// GIFファイルが読み込めるか？
+BOOL g_bUpdate = FALSE;			// 更新確認フラグ
+BOOL g_bInitial = FALSE;		// 初期化済みか？
 
 BOOL g_bFileNotFound;
 BOOL g_iColorTp;
@@ -239,7 +259,7 @@ int g_MouseDragX, g_MouseDragY;
 int g_MouseOldX, g_MouseOldY;
 BOOL g_bCancel = FALSE;
 
-//各種上限
+// 各種上限
 int g_iMapSize = 501;
 int g_iMapPartsMax = 200;
 int g_iObjectPartsMax = 200;
@@ -247,12 +267,12 @@ int g_iMapAtrMax;
 int g_iObjectAtrMax;
 int g_iMesNumberMax;
 
-//暗証番号用
+// 暗証番号用
 BOOL g_bErrorPassword = FALSE;
 char g_szInputPassword[30];
 
 
-//物体データ用
+// 物体データ用
 struct StructOBJ {
 	char *Name;
 	int Object;
@@ -274,8 +294,8 @@ StructOBJ OBJ[] = {
 	{ "ジャンプゲート", OBJECT_LOCALGATE, IDD_DIALOG_LOCALGATE_OBJ },
 	{ "", END }
 };
-char *g_ObjectName[] = { "通常物体　　","メッセージ　　","ＵＲＬｹﾞｰﾄ　","ｽﾃｰﾀｽ変化　","アイテム　　","扉　　　　　","モンスター　","","","","","スコア表示　","","","物を売る　　","物を買う　　","ﾗﾝﾀﾞﾑ選択　　","二者択一　　","ｼﾞｬﾝﾌﾟｹﾞｰﾄ　" };
-char *g_MapName[] = { "道　　　　　","壁　　　　　","ｼﾞｬﾝﾌﾟｹﾞｰﾄ　","","ＵＲＬｹﾞｰﾄ　","ｱｲﾃﾑ分岐　　" };
+char *g_ObjectName[] = { "通常物体","メッセージ","ＵＲＬゲート","ステータス変化","アイテム","扉","モンスター","","","","","スコア表示","","","物を売る","物を買う","ランダム選択","二者択一","ジャンプゲート" };
+char *g_MapName[] = { "道","壁","ジャンプゲート","","ＵＲＬゲート","アイテム分岐" };
 
 StructOBJ MAP[] = {
 	{ "道", MAP_STREET, IDD_DIALOG_STREET },
@@ -286,7 +306,7 @@ StructOBJ MAP[] = {
 	{ "", END }
 };
 
-//物体編集ダイアログの内容
+// 物体編集ダイアログの内容
 struct StructObject {
 	int Object;
 	int Atr;
@@ -417,6 +437,10 @@ void PaintWindow();
 void paintMapAll( HDC hDC );
 // ステータス描画
 void PaintStatus( BOOL flag );
+// ミニマップ作成
+void CreateMiniMap();
+// ミニマップ描画
+void PaintMinimap( HWND hWnd );
 
 // 選択ダイアログプロシージャ
 LRESULT CALLBACK SelectObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
@@ -424,12 +448,16 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 // 編集ダイアログプロシージャ
 LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 LRESULT CALLBACK EditMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
-// クイックビューダイアログプロシージャ
-LRESULT CALLBACK QuickViewDialogProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // キャラクタＣＧ選択ダイアログプロシージャ
 LRESULT CALLBACK SelectCGCharaProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
 // 基本メッセージダイアログプロシージャ
 LRESULT CALLBACK DialogProcBasicMes( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam );
+// クイックビューダイアログプロシージャ
+LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+// ミニマップダイアログプロシージャ
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+void JumpMapFromMiniMap(HWND hWnd, int x, int y);
 
 // 線と四角の描画
 void DrawLine( HDC hDC, int x, int y, int x2, int y2 );
@@ -496,31 +524,35 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	int result;
 
 	switch (message) {
-		//カーソルキー入力
+	//カーソルキー入力
 	case WM_KEYDOWN: {
 		if (LOWORD(wParam) == VK_DOWN) {
 			if (mapYtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_UP) {
 			if (mapYtop > 0) --mapYtop;
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_RIGHT) {
 			if (mapXtop < g_iMapSize - SCREEN_CHIP_SIZE) ++mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		else if (LOWORD(wParam) == VK_LEFT) {
 			if (mapXtop > 0) --mapXtop;
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 	}
-					 //最小化
+	// 最小化
 	case WM_SIZE: {
 		if (wParam == SIZE_RESTORED) {
 			ShowWindow(g_hDlgSelectObject, TRUE);
@@ -530,6 +562,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectChara, TRUE);
 			ShowWindow(g_hDlgExtra, TRUE);
 			ShowWindow(g_hDlgQuickView, TRUE);
+			ShowWindow(g_hDlgMiniMap, TRUE);
 		}
 		else if (wParam == SIZE_MINIMIZED) {
 			ShowWindow(g_hDlgSelectObject, FALSE);
@@ -539,10 +572,11 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			ShowWindow(g_hDlgSelectChara, FALSE);
 			ShowWindow(g_hDlgExtra, FALSE);
 			ShowWindow(g_hDlgQuickView, FALSE);
+			ShowWindow(g_hDlgMiniMap, FALSE);
 		}
 		break;
 	}
-				  //右ボタンクリック
+	// 右ボタンクリック
 	case WM_RBUTTONDOWN:
 		g_MouseDrag = FALSE;
 		x = LOWORD(lParam);
@@ -554,10 +588,10 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (g_SelectObjectData != 0) {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayObjectDialog();
-				//編集モード変更
+				// 編集モード変更
 				DeleteCheckMenu();
 				CheckMenuItem(GetMenu(g_hWnd), ID_MENU_PUTOBJ, MF_CHECKED);
 				g_EditMode = 1;
@@ -565,10 +599,10 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			else {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayMapDialog();
-				//編集モード変更
+				// 編集モード変更
 				DeleteCheckMenu();
 				CheckMenuItem(GetMenu(g_hWnd), ID_MENU_PUTMAP, MF_CHECKED);
 				g_EditMode = 0;
@@ -580,7 +614,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		}
 		break;
 
-		//マウス移動
+	// マウス移動
 	case WM_MOUSEMOVE:
 		g_MouseX = LOWORD(lParam);
 		g_MouseY = HIWORD(lParam) - YTOP;
@@ -592,6 +626,11 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			g_MouseOldX = g_MouseX;
 			g_MouseOldY = g_MouseY;
 		}
+		break;
+
+	case WM_MOUSELEAVE:
+		g_MouseDrag = FALSE;
+		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 
 	case WM_LBUTTONUP:
@@ -610,7 +649,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			y = y2;
 			y2 = g_MouseY / CHIP_SIZE;
 		}
-		//指定範囲内をキャラクタで埋める。
+		// 指定範囲内をキャラクタで埋める。
 		if ((x != x2) || (y != y2)) {
 			if (x2 > x) ++x2;
 			else ++x;
@@ -638,7 +677,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					}
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect(hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		break;
 
@@ -648,14 +689,17 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 		int x2;
 
 		if (y > 0) {
-			//Undoセット
+			// Undoセット
 			SetUndoData();
-			//ドラッグ開始位置セット
+			// ドラッグ開始位置セット
 			g_MouseDragX = x;
 			g_MouseDragY = y;
-			if ((g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4)) g_MouseDrag = TRUE;
+			if ((g_EditMode == 0) || (g_EditMode == 1) || (g_EditMode == 4)) {
+				g_MouseDrag = TRUE;
+				TrackMouseEvent(&g_MapEditTracking);
+			}
 		}
-		//ステータスバークリック
+		// ステータスバークリック
 		if (y < 0) {
 			x2 = 96;
 			if ((x > x2) && (x < (x2 + 64))) {
@@ -689,7 +733,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			}
 			PaintStatus(TRUE);
 		}
-		//マップ画面クリック
+		// マップ画面クリック
 		else if (g_EditMode == 0) {
 			map[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop] = g_SelectMapData;
 			g_bUpdate = TRUE;
@@ -702,7 +746,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			g_SelectMapData = map[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop];
 			DestroyWindow(g_hDlgObject);
 			DestroyWindow(g_hDlgMap);
-			//Undoセット
+			// Undoセット
 			SetUndoData();
 			DisplayMapDialog();
 			InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
@@ -712,7 +756,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			if (g_SelectObjectData != 0) {
 				DestroyWindow(g_hDlgObject);
 				DestroyWindow(g_hDlgMap);
-				//Undoセット
+				// Undoセット
 				SetUndoData();
 				DisplayObjectDialog();
 				InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
@@ -722,6 +766,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			mapObject[y / CHIP_SIZE + mapYtop][x / CHIP_SIZE + mapXtop] = 0;
 		}
 		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_VSCROLL:
@@ -750,12 +795,13 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_MOUSEWHEEL: {
 		int scrollLines;
-		int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		const BOOL parameterResult = SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollLines, 0);
 		if (parameterResult == FALSE) {
 			scrollLines = 1;
 		}
@@ -793,6 +839,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_VERT, mapYtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 	}
 
@@ -822,6 +869,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			SetScrollPos(g_hWnd, SB_HORZ, mapXtop, 1);
 		}
 		InvalidateRect(g_hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		break;
 
 	case WM_PAINT:
@@ -904,6 +952,7 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 				LoadMapData(g_szSelectFile);
 				if (g_bErrorPassword == TRUE) MessageBox(g_hWnd, "暗証番号が違います。", "警告！", MB_OK);
 				LoadBitmap();
+				CreateMiniMap();
 			}
 		}
 		else if (LOWORD(wParam) == ID_MENU_SAVE) {
@@ -1009,14 +1058,19 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_QVIEW, MF_GRAYED);
 		}
 		// 物体選択ウィンドウの表示
-		else if (LOWORD(wParam) == ID_MENU_OBJWINDOW) {
-			ShowWindow(g_hDlgSelectObject, TRUE);
-			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_OBJWINDOW, MF_GRAYED);
+		else if( LOWORD(wParam) == ID_MENU_OBJWINDOW ){
+			ShowWindow( g_hDlgSelectObject, TRUE );
+			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_OBJWINDOW, MF_GRAYED );
 		}
 		// 背景選択ウィンドウの表示
-		else if (LOWORD(wParam) == ID_MENU_MAPWINDOW) {
-			ShowWindow(g_hDlgSelectMap, TRUE);
-			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED);
+		else if( LOWORD(wParam) == ID_MENU_MAPWINDOW ){
+			ShowWindow( g_hDlgSelectMap, TRUE );
+			EnableMenuItem( GetMenu(g_hWnd), ID_MENU_MAPWINDOW, MF_GRAYED );
+		}
+		// ミニマップウインドウの表示
+		else if (LOWORD(wParam) == ID_MENU_MINIWINDOW) {
+			ShowWindow(g_hDlgMiniMap, TRUE);
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_GRAYED);
 		}
 		// パーツのコピー
 		else if (LOWORD(wParam) == ID_MENU_COPY) {
@@ -1057,7 +1111,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 			DestroyWindow(g_hDlgSelectChara);
 			g_bUpdate = TRUE;
 			RestoreUndoData();
+			CreateMiniMap();
 			InvalidateRect(g_hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 			InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 			InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 		}
@@ -1079,7 +1135,9 @@ LRESULT WINAPI MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 					mapObject[mapYtop + y][mapXtop + x] = g_ObjectBuffer[y][x];
 				}
 			}
+			CreateMiniMap();
 			InvalidateRect(g_hWnd, NULL, FALSE);
+			InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 		}
 		// ツールの終了
 		else if (LOWORD(wParam) == ID_MENU_END) {
@@ -1205,13 +1263,21 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	if (g_bErrorPassword == TRUE) MessageBox(g_hWnd, "暗証番号が違います。", "警告！", MB_OK);
 	// ビットマップ読み込み
 	LoadBitmap();
+	CreateMiniMap();
 
-	// ダイアログ表示
-	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
-	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
-	// ダイアログ移動
 	RECT rect;
 	RECT rectBox;
+	// ダイアログ表示
+	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
+	GetWindowRect(g_hWnd, &rectBox);
+	GetWindowRect(g_hDlgQuickView, &rect);
+	// ダイアログ移動
+	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgQuickView, SW_SHOW);
+
+	// パーツ選択
+	g_hDlgSelectObject = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITOBJECT), g_hWnd, (DLGPROC)SelectObjectDialogProc);
+	g_hDlgSelectMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_EDITMAP), g_hWnd, (DLGPROC)SelectMapDialogProc);
 	GetWindowRect(g_hWnd, &rectBox);
 	GetWindowRect(g_hDlgSelectObject, &rect);
 	MoveWindow(g_hDlgSelectObject, rectBox.right, rectBox.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
@@ -1221,12 +1287,12 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 	ShowWindow(g_hDlgSelectMap, SW_SHOW);
 	ShowWindow(g_hDlgSelectObject, SW_SHOW);
 
-	// クイックビュー
-	g_hDlgQuickView = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_QVIEW), g_hWnd, (DLGPROC)QuickViewDialogProc);
-	GetWindowRect(g_hWnd, &rectBox);
-	GetWindowRect(g_hDlgQuickView, &rect);
-	MoveWindow(g_hDlgQuickView, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
-	ShowWindow(g_hDlgQuickView, SW_SHOW);
+	// ミニマップ
+	g_hDlgMiniMap = CreateDialog(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_MINIMAP), g_hWnd, (DLGPROC)MiniMapDialogProc);
+	GetWindowRect(g_hDlgSelectMap, &rectBox);
+	GetWindowRect(g_hDlgMiniMap, &rect);
+	MoveWindow(g_hDlgMiniMap, rectBox.left, rectBox.bottom, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+	ShowWindow(g_hDlgMiniMap, SW_SHOW);
 
 	// 画面色数取得
 	HDC hDC = GetDC(g_hWnd);
@@ -1234,6 +1300,13 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 		MessageBox(g_hWnd, "このツールは、256色環境では画像がうまく表示されません。\nコントロールパネルの画面の設定で、16ビットカラー以上を選択してください。", "警告！", MB_OK);
 	}
 	ReleaseDC(g_hWnd, hDC);
+
+	//マウストラック設定
+	g_MapEditTracking = {
+		sizeof(TRACKMOUSEEVENT),
+		TME_LEAVE,
+		g_hWnd
+	};
 
 	// フォーカス移動
 	SetFocus(g_hWnd);
@@ -1258,6 +1331,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR pszCmdLine, int C
 				if (IsDialogMessage(g_hDlgSelectMap, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgSelectObject, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgQuickView, &msg)) continue;
+				else if (IsDialogMessage(g_hDlgMiniMap, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgExtra, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgCalculate, &msg)) continue;
 				else if (IsDialogMessage(g_hDlgFoundation, &msg)) continue;
@@ -1289,6 +1363,10 @@ BOOL LoadBitmap()
 		g_hmDCHalf = CreateCompatibleDC(hDC);
 		g_hmDCAnd = CreateCompatibleDC(hDC);
 		g_hmDCOr = CreateCompatibleDC(hDC);
+		g_hmDCMini = CreateCompatibleDC(hDC);
+		g_hmDCMiniAnd = CreateCompatibleDC(hDC);
+		g_hmDCMiniOr = CreateCompatibleDC(hDC);
+		g_hmDCMiniMap = CreateCompatibleDC(hDC);
 
 		g_hmDCExtra = CreateCompatibleDC(hDC);
 		g_hBitmapExtra = CreateCompatibleBitmap(hDC, CHIP_SIZE * SCREEN_CHIP_SIZE, 20);
@@ -1347,6 +1425,7 @@ BOOL LoadBitmap()
 	if (g_iColorTp == 0) g_iColorTp = GetPixel(g_hmDC, 60, 20);
 	SetBkColor(g_hmDC, g_iColorTp);
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, g_hmDC, 0, 0, SRCCOPY);
+
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
 	// OR画像領域確保
@@ -1359,10 +1438,26 @@ BOOL LoadBitmap()
 	// AND画像反転
 	BitBlt(g_hmDCAnd, 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, NULL, 0, 0, DSTINVERT);
 
+	// ミニマップのCG領域確保
+	HDC* miniMapHDCs[] = { &g_hmDCMini, &g_hmDCMiniAnd, &g_hmDCMiniOr };
+	HDC* baseHDCs[] = { &g_hmDC, &g_hmDCAnd, &g_hmDCOr };
+	HBITMAP* miniMapBitmaps[] = { &g_hBitmapMini, &g_hBitmapMiniAnd, &g_hBitmapMiniOr };
+	for (int i = 0; i < 3; i++) {
+		if (*miniMapBitmaps[i] != NULL) {
+			DeleteObject(*miniMapBitmaps[i]);
+		}
+		const int imageWidth = CHIP_SIZE * 10 / MINIMAP_SIZE_DIVIDE;
+		const int imageHeight = g_iLoadCGHeight / MINIMAP_SIZE_DIVIDE;
+		*miniMapBitmaps[i] = CreateCompatibleBitmap(hDC, imageWidth, imageHeight);
+		SelectObject(*miniMapHDCs[i], *miniMapBitmaps[i]);
+		StretchBlt(*miniMapHDCs[i], 0, 0, imageWidth, imageHeight, *baseHDCs[i], 0, 0, CHIP_SIZE * 10, g_iLoadCGHeight, SRCCOPY);
+	}
+
 	// デバイス解放
 	ReleaseDC(g_hWnd, hDC);
 	// 再描画
 	InvalidateRect(g_hWnd, NULL, FALSE);
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 
@@ -1482,6 +1577,86 @@ void PaintStatus(BOOL flag)
 	BitBlt(hDC, 0, 0, CHIP_SIZE * SCREEN_CHIP_SIZE, 20, g_hmDCExtra, 0, 0, SRCCOPY);
 	ReleaseDC(g_hWnd, hDC);
 }
+
+
+// ミニマップ作成
+void CreateMiniMap()
+{
+	int y, x;
+	int objNumber, mapNumber;
+	HDC hDC;
+	hDC = GetDC(g_hDlgMiniMap);
+
+	// ミニマップのCG領域確保
+	if (g_hBitmapMiniMap != NULL) {
+		DeleteObject(g_hBitmapMiniMap);
+	}
+	g_hBitmapMiniMap = CreateCompatibleBitmap(hDC, g_iMapSize * 10, g_iMapSize * 10);
+	SelectObject(g_hmDCMiniMap, g_hBitmapMiniMap);
+
+	for (y = 0; y < g_iMapSize; y++) {
+		for (x = 0; x < g_iMapSize; x++) {
+			mapNumber = map[y][x];
+			BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMini, mapAttribute[mapNumber][ATR_X] / 4, mapAttribute[mapNumber][ATR_Y] / 4, SRCCOPY);
+			objNumber = mapObject[y][x];
+			if (objNumber != 0) {
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniAnd, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCAND);
+				BitBlt(g_hmDCMiniMap, x * 10, y * 10, 10, 10, g_hmDCMiniOr, objectAttribute[objNumber][ATR_X] / 4, objectAttribute[objNumber][ATR_Y] / 4, SRCPAINT);
+			}
+		}
+	}
+}
+
+
+//##------------------------------------------------------------------
+// ミニマップ描画
+
+void PaintMinimap(HWND hWnd)
+{
+	int i;
+	HDC hDC;
+	PAINTSTRUCT ps;
+	HPEN screenPen, currentPen;
+	HGDIOBJ currentBrush;
+
+	hDC = BeginPaint(hWnd, &ps);
+	BitBlt(hDC, 0, 0, MINIMAP_WIDTH * minimapChipSize, MINIMAP_HEIGHT * minimapChipSize, g_hmDCMiniMap, minimapXtop * minimapChipSize, minimapYtop * minimapChipSize, SRCCOPY);
+
+	// 画面境界線描画
+	screenPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+	currentPen = CreatePen(PS_INSIDEFRAME, 2, RGB(255, 0, 0));
+	currentBrush = GetStockObject(NULL_BRUSH);
+
+	SelectObject(hDC, screenPen);
+
+	int screenLinePos;
+	for (i = 0; i < MINIMAP_WIDTH; ++i) {
+		if ((i + minimapXtop) % minimapChipSize == 0) {
+			screenLinePos = (i * minimapChipSize) + (minimapChipSize / 2);
+			DrawLine(hDC, screenLinePos, 0, screenLinePos, MINIMAP_HEIGHT * minimapChipSize);
+		}
+	}
+	for (i = 0; i < MINIMAP_HEIGHT; ++i) {
+		if ((i + minimapYtop) % minimapChipSize == 0) {
+			screenLinePos = (i * minimapChipSize) + (minimapChipSize / 2);
+			DrawLine(hDC, 0, screenLinePos, MINIMAP_WIDTH * minimapChipSize, screenLinePos);
+		}
+	}
+	DeleteObject(screenPen);
+
+	SelectObject(hDC, currentPen);
+	SelectObject(hDC, currentBrush);
+	{
+		const int currentX = (mapXtop - minimapXtop) * minimapChipSize;
+		const int currentY = (mapYtop - minimapYtop) * minimapChipSize;
+		Rectangle(hDC, currentX, currentY, currentX + minimapChipSize * SCREEN_CHIP_SIZE, currentY + minimapChipSize * SCREEN_CHIP_SIZE);
+	}
+	DeleteObject(currentPen);
+	DeleteObject(currentBrush);
+
+	EndPaint(hWnd, &ps);
+}
+
 
 
 //##------------------------------------------------------------------
@@ -1658,6 +1833,8 @@ BOOL LoadMapData(char* FileName)
 	// スクロールバー設定
 	SetScrollRange(g_hWnd, SB_VERT, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
 	SetScrollRange(g_hWnd, SB_HORZ, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
+	SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, g_iMapSize - MINIMAP_HEIGHT, FALSE);
+	SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, g_iMapSize - MINIMAP_WIDTH, FALSE);
 
 	// パーツ最大数設定
 	g_iMapPartsMax = ((iDataMapCount - 1) / 50) * 50 + 50;
@@ -1823,13 +2000,13 @@ BOOL LoadMapData(char* FileName)
 		for (i = 0; i < 20; ++i) loadMapString(g_StrMessageSystem[i]);
 	}
 
-	//暗証番号のチェック
+	// 暗証番号のチェック
 	g_bErrorPassword = FALSE;
 	g_szInputPassword[0] = '\0';
 	int number;
 	if (atoi(g_worldPassword) != 0) {
 		if (g_MapData[DATA_VERSION] >= 29) {
-			//暗証番号変換
+			// 暗証番号変換
 			number = atoi(g_worldPassword);
 			number = (((number / 10) - 1197) / 17) - 2357;
 			_itoa_s(number, g_worldPassword, BUFFER_STR_MAX, 10);
@@ -1837,11 +2014,12 @@ BOOL LoadMapData(char* FileName)
 		ShowWindow(g_hDlgSelectObject, FALSE);
 		ShowWindow(g_hDlgSelectMap, FALSE);
 		ShowWindow(g_hDlgQuickView, FALSE);
-		//if( g_bInitial == FALSE ) LibLoad();
+		ShowWindow(g_hDlgMiniMap, FALSE);
 		DialogBox(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PASSWORD), g_hWnd, (DLGPROC)DialogProcPassword);
 		ShowWindow(g_hDlgSelectObject, TRUE);
 		ShowWindow(g_hDlgSelectMap, TRUE);
 		ShowWindow(g_hDlgQuickView, TRUE);
+		ShowWindow(g_hDlgMiniMap, TRUE);
 	}
 	//Undoセット
 	SetUndoData();
@@ -2180,8 +2358,18 @@ void PaintWindowSelectObject(HWND hWnd)
 		}
 	}
 
-	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectObjectData, FALSE);
-	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrObject * DIALOG_OBJECT_SELECT_COLUMN, FALSE);
+	// パーツ番号
+	{
+		CString PartsNumberText;
+		PartsNumberText.Format("パーツ番号: %d", g_SelectObjectData);
+		SetDlgItemText(hWnd, IDC_STATIC_PARTS_NUMBER, PartsNumberText);
+	}
+	// 表示位置
+	{
+		CString CurrentPositionText;
+		CurrentPositionText.Format("左上: %d", g_ScrObject * DIALOG_OBJECT_SELECT_COLUMN);
+		SetDlgItemText(hWnd, IDC_STATIC_CURRENT_POSITION, CurrentPositionText);
+	}
 
 	//境界線表示
 	hpen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
@@ -2220,9 +2408,19 @@ void PaintWindowSelectMap(HWND hWnd)
 			BitBlt(hDC, i * CHIP_SIZE, j * CHIP_SIZE, CHIP_SIZE, CHIP_SIZE, g_hmDC, x, y, SRCCOPY);
 		}
 	}
-	//文字表示
-	SetDlgItemInt(hWnd, IDC_EDIT_PARTS_NUMBER, g_SelectMapData, FALSE);
-	SetDlgItemInt(hWnd, IDC_EDIT_CURRENT_POSITION, g_ScrMap * DIALOG_MAP_SELECT_COLUMN, FALSE);
+
+	// パーツ番号
+	{
+		CString PartsNumberText;
+		PartsNumberText.Format("パーツ番号: %d", g_SelectMapData);
+		SetDlgItemText(hWnd, IDC_STATIC_PARTS_NUMBER, PartsNumberText);
+	}
+	// 表示位置
+	{
+		CString CurrentPositionText;
+		CurrentPositionText.Format("左上: %d", g_ScrMap * DIALOG_OBJECT_SELECT_COLUMN);
+		SetDlgItemText(hWnd, IDC_STATIC_CURRENT_POSITION, CurrentPositionText);
+	}
 
 	//境界線表示
 	hpen = CreatePen(PS_SOLID, 0, RGB(255, 0, 0));
@@ -2411,8 +2609,8 @@ LRESULT CALLBACK SelectMapDialogProc( HWND hWnd, UINT message, WPARAM wParam, LP
 		if (y < CHIP_SIZE * DIALOG_MAP_SELECT_LINE) {
 			g_SelectMapY = g_ScrMap + y / CHIP_SIZE;
 		}
-		InvalidateRect( hWnd, NULL, FALSE );
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
+		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(g_hDlgQuickView, NULL, FALSE);
 		//現在選択中の背景を設定
 		g_SelectMapData = g_SelectMapX + g_SelectMapY * DIALOG_MAP_SELECT_COLUMN;
 		//編集モード変更
@@ -2619,7 +2817,6 @@ LRESULT CALLBACK EditObjectDialogProc( HWND hWnd, UINT message, WPARAM wParam, L
 		}
 		g_bCancel = FALSE;
 		if( g_bRestoreObjectDialog == TRUE ) DisplayObjectDialog();
-		InvalidateRect( g_hDlgQuickView, NULL, FALSE );
 		return 1;
 	}
 	}
@@ -2723,32 +2920,48 @@ LRESULT CALLBACK QuickViewDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	switch (message) {
 	case WM_PAINT: {
 		HDC hDC = GetDC(hWnd);
-		int type;
+		int* partsImageX;
+		int* partsImageY;
+		char* partsMessageString;
+		int* partsNumber;
+		char* partsTypeString;
+		CString partsCaptionString;
+
 		if (g_EditMode == 0) {
-			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, mapAttribute[g_SelectMapData][ATR_X], mapAttribute[g_SelectMapData][ATR_Y], SRCCOPY);
-			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]]);
-			//文字表示
-			char str[BUFFER_STR_MAX];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf_s(str, BUFFER_STR_MAX, "背景ﾊﾟｰﾂ番号：%3d  ", g_SelectMapData);
-			TextOut(hDC, 50, 5, str, strlen(str));
-			type = mapAttribute[g_SelectMapData][ATR_TYPE];
-			sprintf_s(str, BUFFER_STR_MAX, "種類：%s ", g_MapName[type]);
-			TextOut(hDC, 50, 26, str, strlen(str));
+			partsImageX = &mapAttribute[g_SelectMapData][ATR_X];
+			partsImageY = &mapAttribute[g_SelectMapData][ATR_Y];
+			partsMessageString = g_StrMessage[mapAttribute[g_SelectMapData][ATR_STRING]];
+			partsNumber = &g_SelectMapData;
+			partsTypeString = g_MapName[mapAttribute[g_SelectMapData][ATR_TYPE]];
+			partsCaptionString = "背景パーツ";
 		}
-		else if (g_EditMode == 1) {
-			BitBlt(hDC, 5, 4, CHIP_SIZE, CHIP_SIZE, g_hmDC, objectAttribute[g_SelectObjectData][ATR_X], objectAttribute[g_SelectObjectData][ATR_Y], SRCCOPY);
-			SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]]);
-			//文字表示
-			char str[BUFFER_STR_MAX];
-			SetBkColor(hDC, GetSysColor(COLOR_3DFACE));
-			sprintf_s(str, BUFFER_STR_MAX, "物体ﾊﾟｰﾂ番号：%3d  ", g_SelectObjectData);
-			TextOut(hDC, 50, 5, str, strlen(str));
-			type = objectAttribute[g_SelectObjectData][ATR_TYPE];
-			sprintf_s(str, BUFFER_STR_MAX, "種類：%s ", g_ObjectName[type]);
-			TextOut(hDC, 50, 26, str, strlen(str));
+		else {
+			partsImageX = &objectAttribute[g_SelectObjectData][ATR_X];
+			partsImageY = &objectAttribute[g_SelectObjectData][ATR_Y];
+			partsMessageString = g_StrMessage[objectAttribute[g_SelectObjectData][ATR_STRING]];
+			partsNumber = &g_SelectObjectData;
+			partsTypeString = g_ObjectName[objectAttribute[g_SelectObjectData][ATR_TYPE]];
+			partsCaptionString = "物体パーツ";
 		}
+
+		{
+			HWND pictureItem = GetDlgItem(hWnd, IDC_PICTURE_QVIEW);
+			HDC pictureDC = GetDC(pictureItem);
+			BitBlt(pictureDC, 0, 0, CHIP_SIZE, CHIP_SIZE, g_hmDC, *partsImageX, *partsImageY, SRCCOPY);
+		}
+		SetDlgItemText(g_hDlgQuickView, IDC_EDIT_QVIEW, partsMessageString);
+
+		// パーツ番号
+		CString partsNumberText;
+		partsNumberText.Format("%s %4d番", partsCaptionString.GetString(), *partsNumber);
+		SetDlgItemText(g_hDlgQuickView, IDC_STATIC_QVIEW_NUMBER, partsNumberText);
+
+		// 種類
+		CString partsTypeText;
+		partsTypeText.Format("種類: %s", partsTypeString);
+		SetDlgItemText(g_hDlgQuickView, IDC_STATIC_QVIEW_TYPE, partsTypeText);
 		ReleaseDC(hWnd, hDC);
+
 		break;
 	}
 	case WM_COMMAND: {
@@ -3654,7 +3867,9 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				else {
 					if (strcmp(g_mapcgNameBmp, g_mapcgOld) != 0) LoadBitmap();
 				}
+				CreateMiniMap();
 				InvalidateRect(g_hWnd, NULL, FALSE);
+				InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 				g_bUpdate = TRUE;
 			}
 			//戦闘結果の計算
@@ -3728,6 +3943,8 @@ LRESULT CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			// スクロールバー設定
 			SetScrollRange(g_hWnd, SB_VERT, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
 			SetScrollRange(g_hWnd, SB_HORZ, 0, (g_iMapSize - SCREEN_CHIP_SIZE), FALSE);
+			SetScrollRange(g_hDlgMiniMap, SB_VERT, 0, (g_iMapSize - MINIMAP_HEIGHT), FALSE);
+			SetScrollRange(g_hDlgMiniMap, SB_HORZ, 0, (g_iMapSize - MINIMAP_WIDTH), FALSE);
 		}
 		// 背景パーツ最大数拡張
 		else if (LOWORD(wParam) == IDC_BUTTON_MAP_PARTS) {
@@ -3800,6 +4017,190 @@ LRESULT CALLBACK DialogProcBasicMes(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	return 0;
 }
 
+//##------------------------------------------------------------------
+// ミニマップダイアログプロシージャ
+LRESULT CALLBACK MiniMapDialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+
+	case WM_INITDIALOG:
+		SetScrollRange(hWnd, SB_VERT, 0, g_iMapSize - MINIMAP_HEIGHT, FALSE);
+		SetScrollRange(hWnd, SB_HORZ, 0, g_iMapSize - MINIMAP_WIDTH, FALSE);
+		g_MiniMapTracking = {
+			sizeof(TRACKMOUSEEVENT),
+			TME_LEAVE,
+			hWnd
+		};
+		break;
+
+	case WM_LBUTTONDOWN: {
+		g_MapJumping = TRUE;
+		TrackMouseEvent(&g_MiniMapTracking);
+
+		JumpMapFromMiniMap(hWnd, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+	}
+
+	case WM_MOUSEMOVE: {
+		if (g_MapJumping == FALSE) {
+			break;
+		}
+
+		const int x = GET_X_LPARAM(lParam);
+		const int y = GET_Y_LPARAM(lParam);
+		JumpMapFromMiniMap(hWnd, x, y);
+		break;
+	}
+	
+	case WM_MOUSELEAVE:
+	case WM_LBUTTONUP:
+		g_MapJumping = FALSE;
+		break;
+
+	case WM_HSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (minimapXtop < g_iMapSize - MINIMAP_WIDTH) ++minimapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (minimapXtop > 0) --minimapXtop;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			minimapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			minimapXtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (minimapXtop <= g_iMapSize - MINIMAP_WIDTH - 5) minimapXtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (minimapXtop >= 5) minimapXtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_HORZ, minimapXtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
+	case WM_VSCROLL:
+		if (LOWORD(wParam) == SB_LINEDOWN) {
+			if (minimapYtop < g_iMapSize - MINIMAP_HEIGHT) ++minimapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_LINEUP) {
+			if (minimapYtop > 0) --minimapYtop;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBPOSITION) {
+			minimapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_THUMBTRACK) {
+			minimapYtop = HIWORD(wParam);
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEDOWN) {
+			if (minimapYtop <= g_iMapSize - MINIMAP_HEIGHT - 5) minimapYtop += 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		else if (LOWORD(wParam) == SB_PAGEUP) {
+			if (minimapYtop >= 5) minimapYtop -= 5;
+			SetScrollPos(g_hDlgMiniMap, SB_VERT, minimapYtop, 1);
+		}
+		InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
+		break;
+
+	case WM_MOUSEWHEEL: {
+		int scrollSize;
+		const int scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		SystemParametersInfo(SPI_GETWHEELSCROLLLINES, NULL, &scrollSize, 0);
+		// スクロールサイズはスクロール行数の2倍の量
+		scrollSize *= 2;
+		// 横方向
+		if (GET_KEYSTATE_WPARAM(wParam) == MK_SHIFT) {
+			if (scrollDelta < 0) {
+				minimapXtop += scrollSize;
+				if (minimapXtop > (g_iMapSize - MINIMAP_WIDTH)) {
+					minimapXtop = g_iMapSize - MINIMAP_WIDTH;
+				}
+			}
+			else if (scrollDelta > 0) {
+				minimapXtop -= scrollSize;
+				if (minimapXtop < 0) {
+					minimapXtop = 0;
+				}
+			}
+			SetScrollPos(hWnd, SB_HORZ, minimapXtop, 1);
+		}
+		// 縦方向
+		else {
+			if (scrollDelta < 0) {
+				minimapYtop += scrollSize;
+				if (minimapYtop > (g_iMapSize - MINIMAP_HEIGHT)) {
+					minimapYtop = g_iMapSize - MINIMAP_HEIGHT;
+				}
+			}
+			else if (scrollDelta > 0) {
+				minimapYtop -= scrollSize;
+				if (minimapYtop < 0) {
+					minimapYtop = 0;
+				}
+			}
+			SetScrollPos(hWnd, SB_VERT, minimapYtop, 1);
+		}
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
+
+	case WM_COMMAND:
+		if (wParam == IDCANCEL) {
+			EnableMenuItem(GetMenu(g_hWnd), ID_MENU_MINIWINDOW, MF_ENABLED);
+			ShowWindow(hWnd, FALSE);
+		}
+		break;
+
+	case WM_PAINT:
+		PaintMinimap(hWnd);
+		break;
+	}
+	return 0;
+}
+
+// クリック座標からマップの位置を移動
+void JumpMapFromMiniMap(HWND hWnd, int mouseX, int mouseY) {
+	int x = minimapXtop;
+	int y = minimapYtop;
+	// 座標をミニマップ座標単位で計算 (そのまま割ることは用途上適していないため)
+	{
+		for (int mouseXStock = mouseX; mouseXStock > 0; mouseXStock -= minimapChipSize) {
+			x++;
+		}
+		for (int mouseYStock = mouseY; mouseYStock > 0; mouseYStock -= minimapChipSize) {
+			y++;
+		}
+	}
+
+	mapXtop = x - 5;
+	mapYtop = y - 5;
+	if (mapXtop < 0) {
+		mapXtop = 0;
+	}
+	else if (mapXtop + 11 > g_iMapSize) {
+		mapXtop = g_iMapSize - 11;
+	}
+	if (mapYtop < 0) {
+		mapYtop = 0;
+	}
+	else if (mapYtop + 11 > g_iMapSize) {
+		mapYtop = g_iMapSize - 11;
+	}
+
+	InvalidateRect(g_hWnd, NULL, FALSE);
+	InvalidateRect(hWnd, NULL, FALSE);
+}
 
 
 //##------------------------------------------------------------------
@@ -4027,6 +4428,7 @@ void MakeNewMap()
 	InvalidateRect(g_hDlgSelectObject, NULL, FALSE);
 	InvalidateRect(g_hDlgSelectMap, NULL, FALSE);
 	InvalidateRect(g_hDlgQuickView, NULL, FALSE);
+	InvalidateRect(g_hDlgMiniMap, NULL, FALSE);
 
 	MessageBox(g_hWnd, "マップを新規作成しました。\n画面には何も表示されなくなりますがこれで正常です。\n使用するＧＩＦ画像ファイルを選択後、\n新たにパーツを作成してマップに配置していってください。", "マップの新規作成", MB_OK);
 }
