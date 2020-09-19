@@ -235,7 +235,7 @@ char PressData[FILE_DATA_MAX];
 
 char g_szSettingFile[FILE_PATH_STR_MAX] = "./WinWwamk.ini";	//設定ファイル名
 char g_szSelectFile[FILE_PATH_STR_MAX] = "wwamap.dat";		//ファイル名
-char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.1.8";
+char g_szTitleName[] = "WWA Wingマップ作成ツール Ver3.5.2";
 char g_szSelectDir[FILE_PATH_STR_MAX];
 int g_MouseX, g_MouseY;
 int g_MouseDragX, g_MouseDragY;
@@ -4240,7 +4240,6 @@ BOOL ExecBrowser()
 		"  <link rel=\"stylesheet\" href=\"wwa.css\">\n"
 		"  <link rel=\"stylesheet\" href=\"style.css\">\n"
 		"  <script src=\"wwa.js\"></script>\n"
-		"  <script src=\"audio/audio.min.js\"></script>\n"
 		"  <title>" + MapWorldName + "</title>\n"
 		"</head>\n"
 		"<body>\n"
@@ -4249,7 +4248,6 @@ BOOL ExecBrowser()
 		"      id=\"wwa-wrapper\"\n"
 		"      class=\"wwa-size-box\"\n"
 		"      data-wwa-mapdata=\"" + MapDataFileName + "\"\n"
-		"      data-wwa-loader=\"wwaload.js\"\n"
 		"      data-wwa-urlgate-enable=\"true\"\n"
 		"      data-wwa-title-img=\"cover.gif\"\n"
 		"    ></div>\n"
