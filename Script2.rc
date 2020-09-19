@@ -63,7 +63,6 @@ BEGIN
         MENUITEM "クイックビューウインドウの表示",             ID_MENU_QVIEW, GRAYED
         MENUITEM "物体パーツ選択ウインドウの表示",             ID_MENU_OBJWINDOW, GRAYED
         MENUITEM "背景パーツ選択ウインドウの表示",             ID_MENU_MAPWINDOW, GRAYED
-        MENUITEM "ミニマップウインドウの表示",               ID_MENU_MINIWINDOW, GRAYED
     END
 END
 
