@@ -16,8 +16,8 @@
 // 日本語 (日本) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
-LANGUAGE LANG_JAPANESE
-sublang=default
+LANGUAGE LANG_JAPANESE,
+SUBLANG=DEFAULT
 #pragma　code_page(932)
 /////////////////////////////////////////////////////////////////////////////
 //
