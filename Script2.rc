@@ -17,7 +17,6 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
 LANGUAGE LANG_JAPANESE
-#pragma code_page(932)
 
 /////////////////////////////////////////////////////////////////////////////
 //
